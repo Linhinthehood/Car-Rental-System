@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user.controller');
-const { validateUser, hashPassword } = require('../middlewares/user.middleware');
+const { validateUser, hashPassword, uploadAvatar } = require('../middlewares/user.middleware');
 const { authenticateToken } = require('../middlewares/auth.middleware');
 
 // Register user
@@ -16,6 +16,8 @@ router.get('/', authenticateToken, userController.getUsers);
 router.get('/:id', authenticateToken, userController.getUserById);
 // Update user (protected)
 router.put('/:id', authenticateToken, validateUser, hashPassword, userController.updateUser);
+// Update user avatar (protected)
+router.patch('/:id/avatar', authenticateToken, uploadAvatar, userController.updateAvatar);
 // Delete user (protected)
 router.delete('/:id', authenticateToken, userController.deleteUser);
 

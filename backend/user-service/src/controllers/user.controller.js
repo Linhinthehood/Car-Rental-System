@@ -86,3 +86,22 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Update user avatar
+exports.updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    const avatarPath = '/uploads/avatar/' + req.file.filename;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { avatar: avatarPath },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json({ message: 'Avatar updated', avatar: avatarPath, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

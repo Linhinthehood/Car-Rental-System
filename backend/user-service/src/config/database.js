@@ -20,10 +20,7 @@ if (config.nodeEnv !== 'production') {
 const connectDB = async () => {
   try {
     console.log('MongoDB URI:', config.mongoUri); // Debug log
-    const conn = await mongoose.connect(config.mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(config.mongoUri);
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
     logger.error('MongoDB connection error:', err);
