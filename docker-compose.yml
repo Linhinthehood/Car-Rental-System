@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - car-rental-network
+
+  # Redis
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - car-rental-network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - car-rental-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - user-service
+      - car-service
+      - booking-service
+      - payment-service
+      - notification-service
+      - review-service
+    networks:
+      - car-rental-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - car-rental-network
+
+  # Car Service
+  car-service:
+    build:
+      context: ./backend/car-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - car-rental-network
+
+  # Booking Service
+  booking-service:
+    build:
+      context: ./backend/booking-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - car-rental-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./backend/payment-service
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - car-rental-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./backend/notification-service
+      dockerfile: Dockerfile
+    ports:
+      - "3005:3005"
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    networks:
+      - car-rental-network
+
+  # Review Service
+  review-service:
+    build:
+      context: ./backend/review-service
+      dockerfile: Dockerfile
+    ports:
+      - "3006:3006"
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - car-rental-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - car-rental-network
+
+networks:
+  car-rental-network:
+    driver: bridge
+
+volumes:
+  mongodb_data: 
