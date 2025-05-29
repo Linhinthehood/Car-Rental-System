@@ -3,6 +3,7 @@ const cors = require('cors');
 const winston = require('winston');
 const connectDB = require('./config/database');
 const config = require('./config/config');
+const userRoutes = require('./routes/user.routes');
 
 // Create Express app
 const app = express();
@@ -34,6 +35,8 @@ connectDB();
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', service: 'user-service' });
 });
+
+app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
