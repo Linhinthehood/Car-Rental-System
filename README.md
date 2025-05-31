@@ -6,10 +6,10 @@ Hệ thống cho thuê xe theo kiến trúc microservices sử dụng MERN stack
 
 ```
 car-rental-system/
-├── frontend/                 # React frontend
-├── backend/                  # Backend services
+├── frontend/                # React frontend
+├── backend/                 # Backend services
 │   ├── user-service/        # User management service
-│   ├── car-service/         # Car management service
+│   ├── vehicle-service/     # Vehicle management service
 │   ├── booking-service/     # Booking management service
 │   ├── payment-service/     # Payment processing service
 │   ├── notification-service/# Notification service
@@ -57,7 +57,7 @@ docker-compose up
    - Quản lý người dùng
    - Xác thực và phân quyền
 
-2. Car Service (Port: 3002)
+2. Vehicle Service (Port: 3002)
    - Quản lý thông tin xe
    - Tìm kiếm và lọc xe
 

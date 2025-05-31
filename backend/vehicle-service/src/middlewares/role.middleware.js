@@ -1,33 +1,18 @@
-const jwt = require('jsonwebtoken');
-const config = require('../config/config');
-
-exports.authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-
-  jwt.verify(token, config.jwtSecret, (err, user) => {
-    if (err) return res.status(403).json({ error: 'Invalid token' });
-    req.user = user;
-    next();
-  });
-};
-
 // Role-based authorization middleware
-exports.authorizeRoles = (...allowedRoles) => (req, res, next) => {
+const authorizeRoles = (...allowedRoles) => (req, res, next) => {
   const userRole = req.user.role;
 
-  // Admin has all permissions
+  // Admin có mọi quyền
   if (userRole === 'admin') {
     return next();
   }
 
-  // Check if user's role is in allowed roles
+  // Kiểm tra role có trong allowedRoles không
   if (allowedRoles.includes(userRole)) {
     return next();
   }
 
-  // Special case: car_provider has customer permissions
+  // Trường hợp đặc biệt: car_provider có quyền customer
   if (userRole === 'car_provider' && allowedRoles.includes('customer')) {
     return next();
   }
@@ -39,7 +24,7 @@ exports.authorizeRoles = (...allowedRoles) => (req, res, next) => {
 };
 
 // Specific role check middleware
-exports.isAdmin = (req, res, next) => {
+const isAdmin = (req, res, next) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ 
       error: 'Forbidden: admin access required',
@@ -49,7 +34,7 @@ exports.isAdmin = (req, res, next) => {
   next();
 };
 
-exports.isCarProvider = (req, res, next) => {
+const isCarProvider = (req, res, next) => {
   if (req.user.role !== 'car_provider' && req.user.role !== 'admin') {
     return res.status(403).json({ 
       error: 'Forbidden: car provider access required',
@@ -59,7 +44,7 @@ exports.isCarProvider = (req, res, next) => {
   next();
 };
 
-exports.isCustomer = (req, res, next) => {
+const isCustomer = (req, res, next) => {
   if (!['customer', 'car_provider', 'admin'].includes(req.user.role)) {
     return res.status(403).json({ 
       error: 'Forbidden: customer access required',
@@ -67,4 +52,6 @@ exports.isCustomer = (req, res, next) => {
     });
   }
   next();
-}; 
+};
+
+module.exports = { authorizeRoles, isAdmin, isCarProvider, isCustomer }; 

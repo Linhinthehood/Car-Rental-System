@@ -33,6 +33,22 @@ exports.login = async (req, res) => {
   }
 };
 
+// Verify token and return full user info
+exports.verifyToken = async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret);
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(403).json({ error: 'Invalid token' });
+  }
+};
+
 // Get current user info
 exports.getCurrentUser = async (req, res) => {
   try {
@@ -68,7 +84,24 @@ exports.getUserById = async (req, res) => {
 // Update user
 exports.updateUser = async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    // Check if email is being updated and if it already exists
+    if (req.body.email) {
+      const existingUser = await User.findOne({ 
+        email: req.body.email,
+        _id: { $ne: req.user.id } // Exclude current user
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.status(200).json(user);
   } catch (err) {
@@ -95,7 +128,7 @@ exports.updateAvatar = async (req, res) => {
     }
     const avatarPath = '/uploads/avatar/' + req.file.filename;
     const user = await User.findByIdAndUpdate(
-      req.params.id,
+      req.user.id,
       { avatar: avatarPath },
       { new: true }
     );
@@ -105,3 +138,15 @@ exports.updateAvatar = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Delete own account
+exports.deleteOwnAccount = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.status(200).json({ message: 'Account deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

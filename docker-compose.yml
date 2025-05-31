@@ -37,7 +37,7 @@ services:
       - "3000:3000"
     depends_on:
       - user-service
-      - car-service
+      - vehicle-service
       - booking-service
       - payment-service
       - notification-service
@@ -58,8 +58,8 @@ services:
     networks:
       - car-rental-network
 
-  # Car Service
-  car-service:
+  # Vehicle Service
+  vehicle-service:
     build:
       context: ./backend/car-service
       dockerfile: Dockerfile

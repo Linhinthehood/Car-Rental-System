@@ -1,8 +1,8 @@
-require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
 const winston = require('winston');
+const config = require('./config/config');
+const connectDB = require('./config/database');
 
 // Create Express app
 const app = express();
@@ -21,21 +21,23 @@ const logger = winston.createLogger({
   ]
 });
 
-if (process.env.NODE_ENV !== 'production') {
+if (config.nodeEnv !== 'production') {
   logger.add(new winston.transports.Console({
     format: winston.format.simple()
   }));
 }
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => logger.info('Connected to MongoDB'))
-  .catch(err => logger.error('MongoDB connection error:', err));
+connectDB();
 
 // Routes
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', service: 'car-service' });
+  res.status(200).json({ status: 'OK', service: 'vehicle-service' });
 });
+
+// Vehicle routes
+const vehicleRoutes = require('./routes/vehicle.routes');
+app.use('/api/vehicles', vehicleRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -47,7 +49,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3002;
+const PORT = config.port;
 app.listen(PORT, () => {
-  logger.info(`Car service is running on port ${PORT}`);
+  logger.info(`Vehicle service is running on port ${PORT}`);
 });
