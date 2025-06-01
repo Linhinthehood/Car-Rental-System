@@ -90,12 +90,44 @@ exports.getVehicleByUser = async (req, res) => {
   }
 };
 
-// Get available vehicles (status: 'Available')
+// Get available vehicles (status: 'Available') with filter & pagination
 exports.getAvailableVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find({ status: 'Available' });
-    res.json(vehicles);
+    const { brand, seats, carType, minPrice, maxPrice, modelYear, transmission, fuelType, page = 1, limit = 10 } = req.query;
+    const filter = { status: 'Available' };
+    if (brand) filter.brand = brand;
+    if (seats) filter.seats = Number(seats);
+    if (carType) filter.carType = carType;
+    if (modelYear) filter.modelYear = Number(modelYear);
+    if (transmission) filter.transmission = transmission;
+    if (fuelType) filter.fuelType = fuelType;
+    if (minPrice || maxPrice) {
+      filter.rentalPricePerDay = {};
+      if (minPrice) filter.rentalPricePerDay.$gte = Number(minPrice);
+      if (maxPrice) filter.rentalPricePerDay.$lte = Number(maxPrice);
+    }
+    const skip = (Number(page) - 1) * Number(limit);
+    const vehicles = await Vehicle.find(filter).skip(skip).limit(Number(limit));
+    const total = await Vehicle.countDocuments(filter);
+    res.json({
+      data: vehicles,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
+      }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};
+
+// Upload vehicle image
+exports.uploadVehicleImage = (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  const imagePath = '/uploads/vehicles/' + req.file.filename;
+  res.status(200).json({ message: 'Image uploaded', imagePath });
 }; 
