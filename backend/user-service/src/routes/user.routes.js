@@ -14,8 +14,8 @@ router.get('/verify-token', userController.verifyToken);
 router.get('/me', authenticateToken, isCarProvider, userController.getCurrentUser);
 // Get all users (protected)
 router.get('/', authenticateToken, isAdmin, userController.getUsers);
-// Get user by id (protected)
-router.get('/:id', authenticateToken, isAdmin, userController.getUserById);
+// Get user by id 
+router.get('/:id', authenticateToken, userController.getUserById);
 // Update user (protected)
 router.patch('/me', authenticateToken, isCarProvider, hashPassword, userController.updateUser);
 // Update user avatar (protected)

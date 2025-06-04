@@ -2,9 +2,13 @@ const mongoose = require('mongoose');
 const winston = require('winston');
 const config = require('./config');
 
+// Logger configuration
 const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
   transports: [
     new winston.transports.File({ filename: 'error.log', level: 'error' }),
     new winston.transports.File({ filename: 'combined.log' })
@@ -17,10 +21,11 @@ if (config.nodeEnv !== 'production') {
   }));
 }
 
+// Database connection
 const connectDB = async () => {
   try {
     console.log('MongoDB URI:', config.mongoUri); // Debug log
-    const conn = await mongoose.connect(config.mongoUri,{ serverSelectionTimeoutMS: 5000 });
+    const conn = await mongoose.connect(config.mongoUri);
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (err) {
     logger.error('MongoDB connection error:', err);
@@ -28,4 +33,7 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB; 
+module.exports = {
+  connectDB,
+  logger
+}; 
