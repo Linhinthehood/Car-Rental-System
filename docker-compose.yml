@@ -1,21 +1,4 @@
 services:
-  # Redis
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-    networks:
-      - car-rental-network
-
-  # RabbitMQ
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    networks:
-      - car-rental-network
-
   # API Gateway
   api-gateway:
     build:
@@ -44,8 +27,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
-    depends_on:
-      - redis
     volumes:
       - ./uploads/avatar:/usr/src/app/uploads/avatar
     environment:
@@ -63,8 +44,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3002:3002"
-    depends_on:
-      - redis
     volumes:
       - ./uploads/vehicles:/usr/src/app/uploads/vehicles
     environment:
@@ -83,9 +62,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3003:3003"
-    depends_on:
-      - redis
-      - rabbitmq
     environment:
       - PORT=3003
       - USER_SERVICE_URL=http://user-service:3001
