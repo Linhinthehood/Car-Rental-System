@@ -48,7 +48,7 @@ npm install
 
 4. Chạy với Docker Compose:
 ```bash
-docker-compose up
+docker-compose up --build -d
 ```
 
 ## Các service

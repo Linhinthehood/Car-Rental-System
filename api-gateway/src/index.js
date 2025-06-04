@@ -1,117 +1,85 @@
-require('dotenv').config();
 const express = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+const proxy = require('express-http-proxy');
 const winston = require('winston');
+const config = require('./config/config');
 
 // Create Express app
 const app = express();
 
 // Logger configuration
 const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
+  level: config.logging.level,
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
   transports: [
     new winston.transports.File({ filename: 'error.log', level: 'error' }),
     new winston.transports.File({ filename: 'combined.log' })
   ]
 });
 
-if (process.env.NODE_ENV !== 'production') {
+if (config.env !== 'production') {
   logger.add(new winston.transports.Console({
     format: winston.format.simple()
   }));
 }
 
 // Middleware
-app.use(cors());
 app.use(helmet());
+app.use(cors());
+app.use(morgan('combined'));
 app.use(express.json());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
-
-// Proxy configuration
-const services = {
-  user: process.env.USER_SERVICE_URL || 'http://user-service:3001',
-  car: process.env.CAR_SERVICE_URL || 'http://car-service:3002',
-  booking: process.env.BOOKING_SERVICE_URL || 'http://booking-service:3003',
-  payment: process.env.PAYMENT_SERVICE_URL || 'http://payment-service:3004',
-  notification: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3005',
-  review: process.env.REVIEW_SERVICE_URL || 'http://review-service:3006'
-};
-
-// Proxy routes
-app.use('/api/users', createProxyMiddleware({
-  target: services.user,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/users': '/'
-  }
-}));
-
-app.use('/api/cars', createProxyMiddleware({
-  target: services.car,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/cars': '/'
-  }
-}));
-
-app.use('/api/bookings', createProxyMiddleware({
-  target: services.booking,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/bookings': '/'
-  }
-}));
-
-app.use('/api/payments', createProxyMiddleware({
-  target: services.payment,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/payments': '/'
-  }
-}));
-
-app.use('/api/notifications', createProxyMiddleware({
-  target: services.notification,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/notifications': '/'
-  }
-}));
-
-app.use('/api/reviews', createProxyMiddleware({
-  target: services.review,
-  changeOrigin: true,
-  pathRewrite: {
-    '^/api/reviews': '/'
-  }
-}));
-
-// Health check
+// Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', service: 'api-gateway' });
+  res.status(200).json({ status: 'OK' });
 });
+
+// User Service Routes
+app.use('/api/users', proxy(config.services.user.url, {
+  proxyReqPathResolver: (req) => req.originalUrl,
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Proxy Error:', err);
+    next(err);
+  }
+}));
+
+// Vehicle Service Routes
+app.use('/api/vehicles', proxy(config.services.vehicle.url, {
+  proxyReqPathResolver: (req) => req.originalUrl,
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Proxy Error:', err);
+    next(err);
+  }
+}));
+
+// Booking Service Routes
+app.use('/api/bookings', proxy(config.services.booking.url, {
+  proxyReqPathResolver: (req) => req.originalUrl,
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Proxy Error:', err);
+    next(err);
+  }
+}));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   logger.error(err.stack);
   res.status(500).json({
-    status: 'error',
-    message: 'Something went wrong!'
+    error: 'Internal Server Error',
+    message: config.env === 'development' ? err.message : undefined
   });
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  logger.info(`API Gateway is running on port ${PORT}`);
+app.listen(config.port, () => {
+  logger.info(`API Gateway is running on port ${config.port}`);
+  logger.info(`Environment: ${config.env}`);
+  logger.info(`User Service URL: ${config.services.user.url}`);
+  logger.info(`Vehicle Service URL: ${config.services.vehicle.url}`);
+  logger.info(`Booking Service URL: ${config.services.booking.url}`);
 });
