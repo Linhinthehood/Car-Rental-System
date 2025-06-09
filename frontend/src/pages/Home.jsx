@@ -11,7 +11,7 @@ const BANNER_IMAGE =
 
 const Home = () => {
   return (
-    <Box minHeight="100vh" display="flex" flexDirection="column">
+    <Box minHeight="100vh" display="flex" flexDirection="column" sx={{ background: '#f6f7fb' }}>
       <Navbar />
       {/* Banner section */}
       <Box
@@ -54,14 +54,14 @@ const Home = () => {
       </Box>
 
       {/* Popular Locations */}
-      <Container maxWidth="lg">
+      <Box sx={{ maxWidth: '1400px', mx: 'auto', width: '100%', mt: 8 }}>
         <PopularLocations />
-      </Container>
+      </Box>
 
       {/* Featured Cars */}
-      <Container maxWidth="lg">
+      <Box sx={{ maxWidth: '1400px', mx: 'auto', width: '100%', mt: 8 }}>
         <FeaturedCars />
-      </Container>
+      </Box>
 
       <Footer />
     </Box>

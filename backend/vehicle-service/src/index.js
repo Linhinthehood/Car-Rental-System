@@ -3,6 +3,7 @@ const cors = require('cors');
 const winston = require('winston');
 const config = require('./config/config');
 const connectDB = require('./config/database');
+const path = require('path');
 
 // Create Express app
 const app = express();
@@ -38,6 +39,9 @@ app.get('/health', (req, res) => {
 // Vehicle routes
 const vehicleRoutes = require('./routes/vehicle.routes');
 app.use('/api/vehicles', vehicleRoutes);
+
+// Static file serving
+app.use('/uploads/vehicles', express.static('/usr/src/app/uploads/vehicles'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
