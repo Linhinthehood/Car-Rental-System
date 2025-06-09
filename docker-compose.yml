@@ -47,10 +47,6 @@ services:
     volumes:
       - ./uploads/vehicles:/usr/src/app/uploads/vehicles
     environment:
-      - PORT=3002
-      - USER_SERVICE_URL=http://user-service:3001
-      - JWT_SECRET=your_jwt_secret_key
-      - JWT_EXPIRES_IN=24h
       - NODE_ENV=development
     networks:
       - car-rental-network
@@ -63,55 +59,9 @@ services:
     ports:
       - "3003:3003"
     environment:
-      - PORT=3003
-      - USER_SERVICE_URL=http://user-service:3001
-      - VEHICLE_SERVICE_URL=http://vehicle-service:3002
-      - JWT_SECRET=your_jwt_secret_key
-      - JWT_EXPIRES_IN=24h
       - NODE_ENV=development
     networks:
       - car-rental-network
-
-  # # Payment Service
-  # payment-service:
-  #   build:
-  #     context: ./backend/payment-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3004:3004"
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #     - rabbitmq
-  #   networks:
-  #     - car-rental-network
-
-  # # Notification Service
-  # notification-service:
-  #   build:
-  #     context: ./backend/notification-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3005:3005"
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #     - rabbitmq
-  #   networks:
-  #     - car-rental-network
-
-  # # Review Service
-  # review-service:
-  #   build:
-  #     context: ./backend/review-service
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3006:3006"
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #   networks:
-  #     - car-rental-network
 
   # # Frontend
   # frontend:
@@ -119,7 +69,10 @@ services:
   #     context: ./frontend
   #     dockerfile: Dockerfile
   #   ports:
-  #     - "80:80"
+  #     - "4000:4000"
+  #   environment:
+  #     - NODE_ENV=development
+  #     - REACT_APP_API_URL=http://localhost:3000
   #   depends_on:
   #     - api-gateway
   #   networks:

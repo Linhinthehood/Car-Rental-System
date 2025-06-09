@@ -6,7 +6,7 @@ const {authorizeRoles, isAdmin, isCarProvider, isCustomer} = require('../middlew
 const uploadVehicleImage = require('../middlewares/uploadVehicleImage');
 
 router.post('/', authenticateToken, isCarProvider, vehicleController.createVehicle);
-router.get('/available', authenticateToken, isCustomer, vehicleController.getAvailableVehicles);
+router.get('/available', vehicleController.getAvailableVehicles);
 router.get('/', authenticateToken, isAdmin, vehicleController.getAllVehicles);
 router.get('/my-vehicles', authenticateToken, isCarProvider, vehicleController.getVehicleByUser);
 router.get('/:id', authenticateToken, vehicleController.getVehicleById);
