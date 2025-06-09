@@ -25,13 +25,34 @@ const authorizeRoles = (...allowedRoles) => (req, res, next) => {
 
 // Specific role check middleware
 const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      error: 'Forbidden: admin access required',
-      message: 'Only administrators can perform this action'
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'User not authenticated'
+      });
+    }
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Forbidden',
+        message: 'Only administrators can perform this action',
+        requiredRole: 'admin',
+        currentRole: req.user.role
+      });
+    }
+    next();
+  } catch (err) {
+    console.error('Error in isAdmin middleware:', err);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to verify admin role',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
-  next();
 };
 
 const isCarProvider = (req, res, next) => {

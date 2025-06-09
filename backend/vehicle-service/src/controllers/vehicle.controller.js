@@ -30,10 +30,53 @@ exports.createVehicle = async (req, res) => {
 // Get all vehicles
 exports.getAllVehicles = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find();
-    res.json(vehicles);
+    const { brand, seats, carType, minPrice, maxPrice, modelYear, transmission, fuelType, status, page = 1, limit = 10 } = req.query;
+    
+    // Build filter object
+    const filter = {};
+    if (brand) filter.brand = brand;
+    if (seats) filter.seats = Number(seats);
+    if (carType) filter.carType = carType;
+    if (modelYear) filter.modelYear = Number(modelYear);
+    if (transmission) filter.transmission = transmission;
+    if (fuelType) filter.fuelType = fuelType;
+    if (status) filter.status = status;
+    if (minPrice || maxPrice) {
+      filter.rentalPricePerDay = {};
+      if (minPrice) filter.rentalPricePerDay.$gte = Number(minPrice);
+      if (maxPrice) filter.rentalPricePerDay.$lte = Number(maxPrice);
+    }
+
+    // Calculate pagination
+    const skip = (Number(page) - 1) * Number(limit);
+    
+    // Get vehicles with pagination and filters
+    const vehicles = await Vehicle.find(filter)
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    // Get total count for pagination
+    const total = await Vehicle.countDocuments(filter);
+
+    res.json({
+      success: true,
+      data: vehicles,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in getAllVehicles:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to retrieve vehicles',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 

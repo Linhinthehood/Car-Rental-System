@@ -7,6 +7,9 @@ const vehicleSchema = new mongoose.Schema({
   modelYear: { type: Number, required: true },
   licensePlate: { type: String, required: true, unique: true },
   rentalPricePerDay: { type: Number, required: true },
+  description: {
+    type: String
+  },
   features: { type: [String] },
   images: [{ type: String, required: true }],
   seats: { type: Number, required: true },

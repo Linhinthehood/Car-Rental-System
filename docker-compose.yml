@@ -20,6 +20,7 @@ services:
     networks:
       - car-rental-network
 
+
   # User Service
   user-service:
     build:
@@ -48,8 +49,13 @@ services:
       - ./uploads/vehicles:/usr/src/app/uploads/vehicles
     environment:
       - NODE_ENV=development
+      - PORT=3002
+      - USER_SERVICE_URL=http://user-service:3001
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRES_IN=24h
     networks:
       - car-rental-network
+
 
   # Booking Service
   booking-service:
@@ -60,6 +66,10 @@ services:
       - "3003:3003"
     environment:
       - NODE_ENV=development
+      - USER_SERVICE_URL=http://user-service:3001
+      - VEHICLE_SERVICE_URL=http://vehicle-service:3002
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRES_IN=24h
     networks:
       - car-rental-network
 

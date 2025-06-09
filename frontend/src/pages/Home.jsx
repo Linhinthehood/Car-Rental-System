@@ -4,6 +4,7 @@ import SearchBar from '../components/SearchBar';
 import PopularLocations from '../components/PopularLocations';
 import FeaturedCars from '../components/FeaturedCars';
 import Footer from '../components/Footer';
+import Navbar from '../components/Navbar';
 
 const BANNER_IMAGE =
   'https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80';
@@ -11,6 +12,7 @@ const BANNER_IMAGE =
 const Home = () => {
   return (
     <Box minHeight="100vh" display="flex" flexDirection="column">
+      <Navbar />
       {/* Banner section */}
       <Box
         sx={{
@@ -45,7 +47,9 @@ const Home = () => {
           >
             Find Your Perfect Rental Car
           </Typography>
-          <SearchBar />
+          <Box sx={{ mt: 10 }}>
+            <SearchBar />
+          </Box>
         </Container>
       </Box>
 

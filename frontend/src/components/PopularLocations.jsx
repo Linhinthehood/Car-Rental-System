@@ -1,5 +1,8 @@
 import React from 'react';
-import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip } from '@mui/material';
+import { Box, Typography, Card, CardMedia, CardContent, Chip } from '@mui/material';
+import Slider from 'react-slick';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 
 const LOCATIONS = [
   {
@@ -10,7 +13,7 @@ const LOCATIONS = [
   },
   {
     name: 'Ha Noi',
-    image: 'https://images.unsplash.com/photo-1467301540037-ff0dc0fd8bdf?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80',
     description: 'The capital city with extensive car rental services',
     cars: 2,
   },
@@ -20,7 +23,43 @@ const LOCATIONS = [
     description: 'Coastal city with modern rental fleet',
     cars: 0,
   },
+  {
+    name: 'Hai Phong',
+    image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=800&q=80',
+    description: 'Major port city in northern Vietnam',
+    cars: 1,
+  },
+  {
+    name: 'Can Tho',
+    image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80',
+    description: 'The heart of the Mekong Delta',
+    cars: 2,
+  },
 ];
+
+const settings = {
+  dots: true,
+  infinite: true,
+  speed: 500,
+  slidesToShow: 3,
+  slidesToScroll: 1,
+  autoplay: true,
+  autoplaySpeed: 3000,
+  responsive: [
+    {
+      breakpoint: 960,
+      settings: {
+        slidesToShow: 2,
+      },
+    },
+    {
+      breakpoint: 600,
+      settings: {
+        slidesToShow: 1,
+      },
+    },
+  ],
+};
 
 const PopularLocations = () => {
   return (
@@ -31,34 +70,49 @@ const PopularLocations = () => {
       <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
         Choose from our most popular rental locations
       </Typography>
-      <Grid container spacing={4} justifyContent="center">
-        {LOCATIONS.map((loc) => (
-          <Grid item xs={12} sm={6} md={4} key={loc.name}>
-            <Card sx={{ borderRadius: 4, boxShadow: 3, position: 'relative', height: 280 }}>
-              <CardMedia
-                component="img"
-                height="160"
-                image={loc.image}
-                alt={loc.name}
-                sx={{ objectFit: 'cover' }}
-              />
-              <CardContent>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  {loc.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {loc.description}
-                </Typography>
-                <Chip
-                  label={`${loc.cars} cars available`}
-                  color={loc.cars > 0 ? 'primary' : 'default'}
-                  sx={{ fontWeight: 600 }}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <Box sx={{ maxWidth: 1300, mx: 'auto', pb: 6, overflow: 'visible', position: 'relative' }}>
+        <Slider {...settings}>
+          {LOCATIONS.map((loc) => (
+            <Box key={loc.name} px={2}>
+              <Card sx={{ borderRadius: 4, boxShadow: 3, position: 'relative', height: 320, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'visible', mb: 4 }}>
+                <CardMedia
+                  component="img"
+                  height="160"
+                  image={loc.image}
+                  alt={loc.name}
+                  sx={{
+                    objectFit: 'cover',
+                    borderTopLeftRadius: 16,
+                    borderTopRightRadius: 16,
+                    backgroundColor: '#f5f5f5',
+                  }}                  
+                  />
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    {loc.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {loc.description}
+                  </Typography>
+                </CardContent>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    left: 16,
+                    bottom: 16,
+                  }}
+                >
+                  <Chip
+                    label={`${loc.cars} cars available`}
+                    color={loc.cars > 0 ? 'primary' : 'default'}
+                    sx={{ fontWeight: 600, fontSize: 16, height: 32 }}
+                  />
+                </Box>
+              </Card>
+            </Box>
+          ))}
+        </Slider>
+      </Box>
     </Box>
   );
 };

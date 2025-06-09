@@ -11,17 +11,17 @@ router.post('/login', userController.login);
 // Verify token
 router.get('/verify-token', userController.verifyToken);
 // Get current user info
-router.get('/me', authenticateToken, isCarProvider, userController.getCurrentUser);
+router.get('/me', authenticateToken, isCustomer, userController.getCurrentUser);
 // Get all users (protected)
 router.get('/', authenticateToken, isAdmin, userController.getUsers);
 // Get user by id 
 router.get('/:id', authenticateToken, userController.getUserById);
-// Update user (protected)
-router.patch('/me', authenticateToken, isCarProvider, hashPassword, userController.updateUser);
-// Update user avatar (protected)
-router.patch('/me/avatar', authenticateToken, isCarProvider, uploadAvatar, userController.updateAvatar);
-// Delete own account (protected)
-router.delete('/me', authenticateToken, isCarProvider, userController.deleteOwnAccount);
+// Update user 
+router.patch('/me', authenticateToken, isCustomer, hashPassword, userController.updateUser);
+// Update user avatar 
+router.patch('/me/avatar', authenticateToken, isCustomer, uploadAvatar, userController.updateAvatar);
+// Delete own account
+router.delete('/me', authenticateToken, isCustomer, userController.deleteOwnAccount);
 // Delete user (protected)
 router.delete('/:id', authenticateToken, isAdmin, userController.deleteUser);
 

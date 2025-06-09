@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip, Button, Pagination, CircularProgress, Stack } from '@mui/material';
+import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip, Pagination, CircularProgress, Stack } from '@mui/material';
 import api from '../utils/axios';
 
 const PAGE_SIZE = 6;
