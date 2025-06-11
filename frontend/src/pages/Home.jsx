@@ -59,7 +59,7 @@ const Home = () => {
       </Box>
 
       {/* Featured Cars */}
-      <Box sx={{ maxWidth: '1400px', mx: 'auto', width: '100%', mt: 8 }}>
+      <Box sx={{ maxWidth: '1400px', mx: 'auto', width: '100%', px: { xs: 2, md: 4 } }}>
         <FeaturedCars />
       </Box>
 

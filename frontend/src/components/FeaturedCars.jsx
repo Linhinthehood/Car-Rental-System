@@ -8,6 +8,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import api from '../utils/axios';
 
 const PAGE_SIZE = 6;
+const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || '';
 
 const FeaturedCars = () => {
   const [cars, setCars] = useState([]);
@@ -50,7 +51,7 @@ const FeaturedCars = () => {
           <Grid container spacing={4} justifyContent="center">
             {cars.map((car) => (
               <Grid item xs={12} sm={6} md={4} key={car._id}>
-                <Card sx={{ boxShadow: 3, borderRadius: 0, position: 'relative', height: 520, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                <Card sx={{ boxShadow: 3, borderRadius: 3, border: '2px solid #e3e8ee', position: 'relative', height: 520, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', background: '#f7fafd' }}>
                   {/* Status ở góc phải trên */}
                   <Box sx={{ position: 'absolute', top: 20, right: 20, zIndex: 2 }}>
                     <Chip label={car.status} color={car.status === 'Available' ? 'success' : 'default'} size="small" />
@@ -61,9 +62,9 @@ const FeaturedCars = () => {
                     image={
                       car.images && car.images.length > 0
                         ? (car.images[0].startsWith('/uploads')
-                            ? `http://localhost:3002${car.images[0]}`
+                            ? `${IMAGE_BASE_URL}${car.images[0]}`
                             : car.images[0])
-                        : 'https://via.placeholder.com/600x340?text=Car+Image'
+                        : ''
                     }
                     alt={car.name}
                     sx={{
@@ -71,7 +72,10 @@ const FeaturedCars = () => {
                       height: 260,
                       objectFit: 'cover',
                       background: '#f5f5f5',
-                      borderRadius: 0,
+                      borderTopLeftRadius: 12,
+                      borderTopRightRadius: 12,
+                      borderBottomLeftRadius: 0,
+                      borderBottomRightRadius: 0,
                     }}
                   />
                   <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 3 }}>

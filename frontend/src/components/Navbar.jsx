@@ -1,20 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Avatar, Menu, MenuItem, IconButton } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
+import api from '../utils/axios';
 
 const Navbar = () => {
   const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState(null);
-  // Giả lập lấy user từ localStorage (sau này sẽ lấy từ API)
-  const token = localStorage.getItem('token');
-  let user = null;
-  if (token) {
-    // Tạm thời hardcode, sau này lấy từ API hoặc decode token
-    user = {
-      name: 'Vip88',
-      avatar: 'https://cdn-icons-png.flaticon.com/512/747/747376.png',
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setUser(null);
+        return;
+      }
+      try {
+        const res = await api.get('/api/users/me');
+        setUser(res.data.data || res.data); // tuỳ backend trả về
+      } catch (err) {
+        setUser(null);
+      }
     };
-  }
+    fetchUser();
+  }, []);
 
   const handleMenu = (event) => {
     setAnchorEl(event.currentTarget);
@@ -45,22 +53,44 @@ const Navbar = () => {
           >
             Car Rental
           </Typography>
-          <Button
-            component={RouterLink}
-            to="/"
-            color={location.pathname === '/' ? 'primary' : 'inherit'}
-            sx={{ textTransform: 'none', fontWeight: 500 }}
-          >
-            Home
-          </Button>
-          <Button
-            component={RouterLink}
-            to="/vehicles"
-            color={location.pathname.startsWith('/vehicles') ? 'primary' : 'inherit'}
-            sx={{ textTransform: 'none', fontWeight: 500 }}
-          >
-            Cars
-          </Button>
+          <Box sx={{ display: 'flex', gap: 3 }}>
+            <Button
+              component={RouterLink}
+              to="/"
+              color={location.pathname === '/' ? 'primary' : 'inherit'}
+              sx={{ textTransform: 'none', fontWeight: 500 }}
+            >
+              Home
+            </Button>
+            <Button
+              component={RouterLink}
+              to="/vehicles"
+              color={location.pathname.startsWith('/vehicles') ? 'primary' : 'inherit'}
+              sx={{ textTransform: 'none', fontWeight: 500 }}
+            >
+              Cars
+            </Button>
+            {(user && (user.role === 'customer' || user.role === 'car_provider')) && (
+              <Button
+                component={RouterLink}
+                to="/my-rentals"
+                color={location.pathname.startsWith('/my-rentals') ? 'primary' : 'inherit'}
+                sx={{ textTransform: 'none', fontWeight: 500 }}
+              >
+                My Rental
+              </Button>
+            )}
+            {(user && user.role === 'car_provider') && (
+              <Button
+                component={RouterLink}
+                to="/manager-cars"
+                color={location.pathname.startsWith('/manager-cars') ? 'primary' : 'inherit'}
+                sx={{ textTransform: 'none', fontWeight: 500 }}
+              >
+                Manager Cars
+              </Button>
+            )}
+          </Box>
         </Box>
         <Box>
           {!user ? (
@@ -85,12 +115,12 @@ const Navbar = () => {
             </>
           ) : (
             <>
+              <Typography variant="body1" sx={{ fontWeight: 600, display: 'inline', mr: 1 }}>
+                {user.name}
+              </Typography>
               <IconButton onClick={handleMenu} sx={{ p: 0, mr: 1 }}>
                 <Avatar src={user.avatar} alt={user.name} />
               </IconButton>
-              <Typography variant="body1" sx={{ fontWeight: 600, display: 'inline', mr: 2 }}>
-                {user.name}
-              </Typography>
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
@@ -98,7 +128,7 @@ const Navbar = () => {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
               >
-                <MenuItem component={RouterLink} to="/my-rentals" onClick={handleClose}>My Rentals</MenuItem>
+                <MenuItem component={RouterLink} to="/profile" onClick={handleClose}>My Profile</MenuItem>
                 <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </Menu>
             </>

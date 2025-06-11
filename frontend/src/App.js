@@ -15,6 +15,11 @@ const theme = createTheme({
       main: '#dc004e',
     },
   },
+  typography: {
+    // fontFamily: 'Montserrat, Arial, sans-serif', // Đã dùng Montserrat
+    // fontFamily: 'Poppins, Arial, sans-serif', // Đã dùng Poppins
+    fontFamily: 'Lato, Arial, sans-serif', // Đang dùng Lato
+  },
 });
 
 function App() {
