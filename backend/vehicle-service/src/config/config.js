@@ -6,7 +6,7 @@ const config = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN,
   nodeEnv: process.env.NODE_ENV,
-  userServiceUrl: process.env.USER_SERVICE_URL || 'http://localhost:3001'
+  userServiceUrl: process.env.USER_SERVICE_URL
 };
 
 console.log('Environment variables:', {

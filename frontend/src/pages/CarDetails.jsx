@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -8,7 +8,6 @@ import {
   Divider,
   Chip,
   Avatar,
-  Rating,
   FormControl,
   RadioGroup,
   FormControlLabel,
@@ -69,10 +68,14 @@ const CarDetails = () => {
     const fetchCarDetails = async () => {
       try {
         const response = await api.get(`/api/vehicles/${id}`);
-        setCar(response.data);
+        if (response.data && response.data.data) {
+          setCar(response.data.data);
+        } else {
+          setCar(null);
+        }
       } catch (error) {
         console.error('Error fetching car details:', error);
-        navigate('/vehicles');
+        setCar(null);
       } finally {
         setLoading(false);
       }
@@ -114,6 +117,17 @@ const CarDetails = () => {
     return newDate.toISOString();
   };
 
+  // Helper để tính endDate cho thuê theo giờ
+  const getHourlyEndDate = useCallback(() => {
+    if (!pickupDate || !pickupTime || !hourlyDuration) return null;
+    const [hours, minutes] = pickupTime.split(':');
+    const start = new Date(pickupDate);
+    start.setHours(Number(hours), Number(minutes), 0, 0);
+    const end = new Date(start);
+    end.setHours(end.getHours() + Number(hourlyDuration));
+    return end.toISOString();
+  }, [pickupDate, pickupTime, hourlyDuration]);
+
   useEffect(() => {
     const calculatePrice = async () => {
       if (!car) return;
@@ -129,29 +143,46 @@ const CarDetails = () => {
           return;
         }
       }
+
       try {
+        const startDate = combineDateTime(pickupDate, pickupTime);
+        const endDate = bookingType === BOOKING_TYPES.DAILY
+          ? combineDateTime(returnDate, returnTime)
+          : getHourlyEndDate();
+
         const response = await api.post('/api/bookings/calculate-price', {
           vehicleId: car._id,
           bookingType,
           hourlyDuration: bookingType === BOOKING_TYPES.HOURLY ? hourlyDuration : null,
-          startDate: combineDateTime(pickupDate, pickupTime),
-          endDate: bookingType === BOOKING_TYPES.DAILY ? combineDateTime(returnDate, returnTime) : null,
+          startDate,
+          endDate
         });
-        setEstimatedPrice(response.data.totalPrice);
+
+        if (response.data) {
+          if (bookingType === BOOKING_TYPES.HOURLY && response.data.totalPrice === null) {
+            const hourlyRate = car.rentalPricePerDay / 24;
+            const totalPrice = hourlyRate * hourlyDuration;
+            setEstimatedPrice(Math.round(totalPrice));
+          } else {
+            setEstimatedPrice(response.data.totalPrice);
+          }
+        } else {
+          setEstimatedPrice(null);
+        }
       } catch (error) {
-        console.error('Error calculating price:', error);
         setEstimatedPrice(null);
       }
     };
+
     calculatePrice();
-  }, [car, bookingType, pickupDate, returnDate, hourlyDuration, pickupTime, returnTime]);
+  }, [car, bookingType, pickupDate, returnDate, hourlyDuration, pickupTime, returnTime, getHourlyEndDate]);
 
   const handleBooking = async () => {
     try {
       const bookingData = {
         vehicleId: car._id,
         startDate: combineDateTime(pickupDate, pickupTime),
-        endDate: bookingType === BOOKING_TYPES.DAILY ? combineDateTime(returnDate, returnTime) : null,
+        endDate: bookingType === BOOKING_TYPES.DAILY ? combineDateTime(returnDate, returnTime) : getHourlyEndDate(),
         bookingType,
         hourlyDuration: bookingType === BOOKING_TYPES.HOURLY ? hourlyDuration : null,
       };
@@ -174,6 +205,18 @@ const CarDetails = () => {
     );
   }
 
+  if (!car) {
+    return (
+      <Box minHeight="100vh" display="flex" flexDirection="column">
+        <Navbar />
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Typography>Car not found</Typography>
+        </Box>
+        <Footer />
+      </Box>
+    );
+  }
+
   return (
     <Box minHeight="100vh" display="flex" flexDirection="column" sx={{ background: '#f6f7fb' }}>
       <Navbar />
@@ -186,12 +229,26 @@ const CarDetails = () => {
             indicators={true}
             navButtonsAlwaysVisible={true}
           >
-            {car.images.map((image, index) => (
+            {car.images && car.images.length > 0 ? (
+              car.images.map((image, index) => (
+                <Box
+                  key={index}
+                  component="img"
+                  src={image.startsWith('/uploads') ? `${process.env.REACT_APP_IMAGE_BASE_URL}${image}` : image}
+                  alt={`${car.name} - Image ${index + 1}`}
+                  sx={{
+                    width: '100%',
+                    height: '500px',
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                  }}
+                />
+              ))
+            ) : (
               <Box
-                key={index}
                 component="img"
-                src={image.startsWith('/uploads') ? `${process.env.REACT_APP_IMAGE_BASE_URL}${image}` : image}
-                alt={`${car.name} - Image ${index + 1}`}
+                src="/placeholder-car.jpg"
+                alt="No image available"
                 sx={{
                   width: '100%',
                   height: '500px',
@@ -199,7 +256,7 @@ const CarDetails = () => {
                   borderRadius: 2,
                 }}
               />
-            ))}
+            )}
           </Carousel>
         </Box>
 
@@ -263,19 +320,51 @@ const CarDetails = () => {
             {/* Car Provider Information */}
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={600} gutterBottom>
-                Car Provider
+                Car Provider Information
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar src={car.car_providerAvatar} alt={car.car_providerName} />
-                <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    {car.car_providerName}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 3, mt: 2 }}>
+                <Avatar 
+                  src={car.car_provider?.avatar || '/uploads/avatar/user.png'} 
+                  alt={car.car_provider?.name}
+                  sx={{ 
+                    width: 80, 
+                    height: 80,
+                    border: '2px solid #e3e8ee'
+                  }} 
+                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    {car.car_provider?.name || 'Unknown Provider'}
                   </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Rating value={car.car_providerRating} readOnly size="small" />
-                    <Typography variant="body2" color="text.secondary">
-                      ({car.car_providerRating})
-                    </Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                        Email:
+                      </Typography>
+                      <Typography variant="body2">
+                        {car.car_provider?.email || 'Not available'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                        Phone:
+                      </Typography>
+                      <Typography variant="body2">
+                        {car.car_provider?.phoneNumber || 'Not available'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                        Role:
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        textTransform: 'capitalize',
+                        color: 'primary.main',
+                        fontWeight: 500
+                      }}>
+                        {car.car_provider?.role || 'Not available'}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
               </Box>

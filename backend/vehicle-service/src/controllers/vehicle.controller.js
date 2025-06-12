@@ -85,9 +85,51 @@ exports.getVehicleById = async (req, res) => {
   try {
     const vehicle = await Vehicle.findById(req.params.id);
     if (!vehicle) return res.status(404).json({ error: 'Vehicle not found' });
-    res.json(vehicle);
+
+    // Fetch user information from user-service
+    let userInfo;
+    try {
+      const token = req.headers.authorization;
+      if (!token) {
+        console.log('No authorization token provided');
+        userInfo = null;
+      } else {
+        console.log('Fetching user info for ID:', vehicle.car_providerId);
+        const response = await axios.get(`${config.userServiceUrl}/api/users/${vehicle.car_providerId}`, {
+          headers: { Authorization: token }
+        });
+        console.log('User service response:', response.data);
+        // Lấy dữ liệu user từ response
+        userInfo = response.data.data || response.data;
+      }
+    } catch (err) {
+      console.error('Error fetching user info:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      userInfo = null;
+    }
+
+    // Chuyển đổi vehicle thành plain object và thêm thông tin user
+    const vehicleData = vehicle.toObject();
+    const responseData = {
+      ...vehicleData,
+      car_provider: userInfo
+    };
+
+    console.log('Final response data:', responseData);
+
+    res.json({
+      success: true,
+      data: responseData
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in getVehicleById:', err);
+    res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
   }
 };
 
@@ -126,10 +168,31 @@ exports.deleteVehicle = async (req, res) => {
 // Get vehicles by car provider (user)
 exports.getVehicleByUser = async (req, res) => {
   try {
-    const vehicles = await Vehicle.find({ car_providerId: req.user._id });
-    res.json(vehicles);
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const vehicles = await Vehicle.find({ car_providerId: req.user._id })
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 });
+
+    const total = await Vehicle.countDocuments({ car_providerId: req.user._id });
+
+    res.json({
+      success: true,
+      data: vehicles,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / Number(limit))
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ 
+      success: false,
+      error: err.message 
+    });
   }
 };
 

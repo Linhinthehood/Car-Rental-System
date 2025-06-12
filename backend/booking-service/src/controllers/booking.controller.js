@@ -45,6 +45,9 @@ const createBooking = async (req, res) => {
     let vehicle;
     try {
       vehicle = await externalService.verifyVehicle(vehicleId, token);
+      if (vehicle && vehicle.data) {
+        vehicle = vehicle.data;
+      }
       if (!vehicle.status || vehicle.status !== 'Available') {
         return res.status(400).json({ message: 'Vehicle is not available' });
       }
@@ -57,13 +60,25 @@ const createBooking = async (req, res) => {
       return res.status(400).json({ message: 'Hourly duration is required for hourly bookings' });
     }
 
+    // Nếu là thuê theo giờ, tự động tính endDate
+    let finalEndDate = endDate;
+    if (bookingType === BOOKING_TYPES.HOURLY) {
+      if (!startDate || !hourlyDuration) {
+        return res.status(400).json({ message: 'Missing startDate or hourlyDuration' });
+      }
+      const start = new Date(startDate);
+      const end = new Date(start);
+      end.setHours(end.getHours() + Number(hourlyDuration));
+      finalEndDate = end.toISOString();
+    }
+
     // Calculate total price
     const totalPrice = calculateTotalPrice(
       bookingType, 
       hourlyDuration, 
       vehicle.rentalPricePerDay,
       startDate,
-      endDate
+      bookingType === BOOKING_TYPES.HOURLY ? finalEndDate : endDate
     );
 
     const booking = new Booking({
@@ -73,7 +88,7 @@ const createBooking = async (req, res) => {
       bookingType,
       hourlyDuration: bookingType === BOOKING_TYPES.HOURLY ? hourlyDuration : undefined,
       startDate,
-      endDate,
+      endDate: bookingType === BOOKING_TYPES.HOURLY ? finalEndDate : endDate,
       totalPrice
     });
 
@@ -222,6 +237,9 @@ const calculateEstimatedPrice = async (req, res) => {
     let vehicle;
     try {
       vehicle = await externalService.verifyVehicle(vehicleId, token);
+      if (vehicle && vehicle.data) {
+        vehicle = vehicle.data;
+      }
     } catch (error) {
       return res.status(error.status).json({ message: error.message });
     }
