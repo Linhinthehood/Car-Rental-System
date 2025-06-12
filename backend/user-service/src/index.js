@@ -1,3 +1,9 @@
+const fs = require('fs');
+const path = require('path');
+const avatarDir = path.resolve(__dirname, '../../uploads/avatar');
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
+}
 const express = require('express');
 const cors = require('cors');
 const winston = require('winston');
@@ -11,6 +17,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static avatar
+app.use('/uploads/avatar', express.static(avatarDir));
 
 // Logger configuration
 const logger = winston.createLogger({

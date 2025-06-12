@@ -1,39 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Typography, Card, CardMedia, CardContent, Chip } from '@mui/material';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import api from '../utils/axios';
 
 const LOCATIONS = [
   {
     name: 'Ho Chi Minh City',
-    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80',
     description: "Vietnam's largest city with diverse vehicle options",
-    cars: 3,
+    coordinates: [10.7756, 106.7004],
+    city: 'Ho Chi Minh city'
   },
   {
     name: 'Ha Noi',
-    image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
     description: 'The capital city with extensive car rental services',
-    cars: 2,
+    coordinates: [21.0285, 105.8542],
+    city: 'Ha Noi city'
   },
   {
     name: 'Da Nang',
-    image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1565967511849-76a60a516170?auto=format&fit=crop&w=800&q=80',
     description: 'Coastal city with modern rental fleet',
-    cars: 0,
+    coordinates: [16.0544, 108.2022],
+    city: 'Da Nang city'
   },
   {
-    name: 'Hai Phong',
-    image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=800&q=80',
-    description: 'Major port city in northern Vietnam',
-    cars: 1,
+    name: 'Nha Trang',
+    image: 'https://images.unsplash.com/photo-1599571234909-29ed5d1321d6?auto=format&fit=crop&w=800&q=80',
+    description: 'Famous coastal city with quality rental services',
+    coordinates: [12.2388, 109.1967],
+    city: 'Nha Trang city'
   },
   {
-    name: 'Can Tho',
-    image: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80',
-    description: 'The heart of the Mekong Delta',
-    cars: 2,
+    name: 'Quy Nhon',
+    image: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80',
+    description: 'Beautiful coastal city with growing rental services',
+    coordinates: [13.7765, 109.2233],
+    city: 'Quy Nhon city'
   },
 ];
 
@@ -62,6 +68,36 @@ const settings = {
 };
 
 const PopularLocations = () => {
+  const [locationStats, setLocationStats] = useState({});
+
+  useEffect(() => {
+    const fetchVehicleCounts = async () => {
+      try {
+        const response = await api.get('/api/vehicles/available', {
+          params: {
+            limit: 1000 // Set a large limit to get all vehicles
+          }
+        });
+        const vehicles = response.data.data || [];
+        
+        // Count vehicles by city
+        const counts = vehicles.reduce((acc, vehicle) => {
+          const city = vehicle.location?.city;
+          if (city) {
+            acc[city] = (acc[city] || 0) + 1;
+          }
+          return acc;
+        }, {});
+
+        setLocationStats(counts);
+      } catch (error) {
+        console.error('Error fetching vehicle counts:', error);
+      }
+    };
+
+    fetchVehicleCounts();
+  }, []);
+
   return (
     <Box sx={{ my: 8 }}>
       <Typography variant="h5" fontWeight={700} align="center" gutterBottom>
@@ -74,7 +110,21 @@ const PopularLocations = () => {
         <Slider {...settings}>
           {LOCATIONS.map((loc) => (
             <Box key={loc.name} px={2}>
-              <Card sx={{ borderRadius: 4, boxShadow: 3, position: 'relative', height: 320, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', overflow: 'visible', mb: 4 }}>
+              <Card sx={{ 
+                borderRadius: 4, 
+                boxShadow: 3, 
+                position: 'relative', 
+                height: 320, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                justifyContent: 'flex-start', 
+                overflow: 'visible', 
+                mb: 4,
+                transition: 'transform 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-8px)',
+                }
+              }}>
                 <CardMedia
                   component="img"
                   height="160"
@@ -86,7 +136,7 @@ const PopularLocations = () => {
                     borderTopRightRadius: 16,
                     backgroundColor: '#f5f5f5',
                   }}                  
-                  />
+                />
                 <CardContent sx={{ flexGrow: 1 }}>
                   <Typography variant="h6" fontWeight={700} gutterBottom>
                     {loc.name}
@@ -100,11 +150,13 @@ const PopularLocations = () => {
                     position: 'absolute',
                     left: 16,
                     bottom: 16,
+                    display: 'flex',
+                    gap: 1,
                   }}
                 >
                   <Chip
-                    label={`${loc.cars} cars available`}
-                    color={loc.cars > 0 ? 'primary' : 'default'}
+                    label={`${locationStats[loc.city] || 0} cars available`}
+                    color={(locationStats[loc.city] || 0) > 0 ? 'primary' : 'default'}
                     sx={{ fontWeight: 600, fontSize: 16, height: 32 }}
                   />
                 </Box>

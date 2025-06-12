@@ -32,13 +32,15 @@ exports.hashPassword = async (req, res, next) => {
   next();
 };
 
+const avatarDir = path.join(__dirname, '../../uploads/avatar');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../../../uploads/avatar'));
+    cb(null, avatarDir);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
-    cb(null, 'user_' + req.params.id + '_' + Date.now() + ext);
+    const userId = req.user ? req.user.id : Date.now();
+    cb(null, 'user_' + userId + '_' + Date.now() + ext);
   }
 });
 

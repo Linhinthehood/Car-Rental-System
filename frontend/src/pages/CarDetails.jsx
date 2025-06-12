@@ -40,6 +40,15 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// City coordinates mapping
+const CITY_COORDINATES = {
+  'Quy Nhon city': [13.7765, 109.2233],
+  'Nha Trang city': [12.2388, 109.1967],
+  'Ha Noi city': [21.0285, 105.8542],
+  'Ho Chi Minh city': [10.7756, 106.7004],
+  'Da Nang city': [16.0544, 108.2022]
+};
+
 const BOOKING_TYPES = {
   DAILY: 'daily',
   HOURLY: 'hourly',
@@ -292,28 +301,40 @@ const CarDetails = () => {
               <Typography variant="h6" fontWeight={600} gutterBottom>
                 Location
               </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={600} color="primary">
+                    City:
+                  </Typography>
+                  <Typography variant="subtitle1">
+                    {car.location?.city || 'Ho Chi Minh city'}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={600} color="primary">
+                    Address:
+                  </Typography>
+                  <Typography variant="subtitle1">
+                    {car.location?.address || 'Not specified'}
+                  </Typography>
+                </Box>
+              </Box>
               <Box sx={{ height: 300, width: '100%', borderRadius: 2, overflow: 'hidden' }}>
-                {car.location && car.location.lat && car.location.lng ? (
-                  <MapContainer
-                    center={[car.location.lat, car.location.lng]}
-                    zoom={13}
-                    style={{ height: '100%', width: '100%' }}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    <Marker position={[car.location.lat, car.location.lng]}>
-                      <Popup>
-                        {car.name}
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
-                ) : (
-                  <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography color="text.secondary">Location not available</Typography>
-                  </Box>
-                )}
+                <MapContainer
+                  center={car.location?.city ? CITY_COORDINATES[car.location.city] || CITY_COORDINATES['Ho Chi Minh city'] : CITY_COORDINATES['Ho Chi Minh city']}
+                  zoom={13}
+                  style={{ height: '100%', width: '100%' }}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={car.location?.city ? CITY_COORDINATES[car.location.city] || CITY_COORDINATES['Ho Chi Minh city'] : CITY_COORDINATES['Ho Chi Minh city']}>
+                    <Popup>
+                      {car.name} - {car.location?.city || 'Ho Chi Minh city'}
+                    </Popup>
+                  </Marker>
+                </MapContainer>
               </Box>
             </Paper>
 
