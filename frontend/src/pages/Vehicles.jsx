@@ -85,7 +85,8 @@ const Vehicles = () => {
   }, [page, filters, sort]);
 
   const handleFilterChange = (e) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
     setPage(1);
   };
 
@@ -226,7 +227,7 @@ const Vehicles = () => {
                           borderRadius: 3, 
                           border: '2px solid #e3e8ee', 
                           position: 'relative', 
-                          height: 520, 
+                          height: 560, 
                           display: 'flex', 
                           flexDirection: 'column', 
                           justifyContent: 'flex-start', 

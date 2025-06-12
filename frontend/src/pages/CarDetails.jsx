@@ -62,6 +62,8 @@ const CarDetails = () => {
   const [returnDate, setReturnDate] = useState(null);
   const [hourlyDuration, setHourlyDuration] = useState(6);
   const [estimatedPrice, setEstimatedPrice] = useState(null);
+  const [pickupTime, setPickupTime] = useState('09:00');
+  const [returnTime, setReturnTime] = useState('09:00');
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -103,30 +105,37 @@ const CarDetails = () => {
     setHourlyDuration(event.target.value);
   };
 
+  // Helper để ghép ngày và giờ thành ISO string
+  const combineDateTime = (date, time) => {
+    if (!date || !time) return null;
+    const [hours, minutes] = time.split(':');
+    const newDate = new Date(date);
+    newDate.setHours(Number(hours), Number(minutes), 0, 0);
+    return newDate.toISOString();
+  };
+
   useEffect(() => {
     const calculatePrice = async () => {
       if (!car) return;
-
       // Validate required fields based on booking type
       if (bookingType === BOOKING_TYPES.DAILY) {
-        if (!pickupDate || !returnDate) {
+        if (!pickupDate || !returnDate || !pickupTime || !returnTime) {
           setEstimatedPrice(null);
           return;
         }
       } else {
-        if (!pickupDate) {
+        if (!pickupDate || !pickupTime) {
           setEstimatedPrice(null);
           return;
         }
       }
-
       try {
         const response = await api.post('/api/bookings/calculate-price', {
           vehicleId: car._id,
           bookingType,
           hourlyDuration: bookingType === BOOKING_TYPES.HOURLY ? hourlyDuration : null,
-          startDate: pickupDate,
-          endDate: bookingType === BOOKING_TYPES.DAILY ? returnDate : null,
+          startDate: combineDateTime(pickupDate, pickupTime),
+          endDate: bookingType === BOOKING_TYPES.DAILY ? combineDateTime(returnDate, returnTime) : null,
         });
         setEstimatedPrice(response.data.totalPrice);
       } catch (error) {
@@ -134,20 +143,18 @@ const CarDetails = () => {
         setEstimatedPrice(null);
       }
     };
-
     calculatePrice();
-  }, [car, bookingType, pickupDate, returnDate, hourlyDuration]);
+  }, [car, bookingType, pickupDate, returnDate, hourlyDuration, pickupTime, returnTime]);
 
   const handleBooking = async () => {
     try {
       const bookingData = {
         vehicleId: car._id,
-        startDate: pickupDate,
-        endDate: bookingType === BOOKING_TYPES.DAILY ? returnDate : null,
+        startDate: combineDateTime(pickupDate, pickupTime),
+        endDate: bookingType === BOOKING_TYPES.DAILY ? combineDateTime(returnDate, returnTime) : null,
         bookingType,
         hourlyDuration: bookingType === BOOKING_TYPES.HOURLY ? hourlyDuration : null,
       };
-
       await api.post('/api/bookings', bookingData);
       navigate('/my-rentals');
     } catch (error) {
@@ -307,7 +314,7 @@ const CarDetails = () => {
               </FormControl>
 
               <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box sx={{ mb: 3 }}>
+                <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
                   <DatePicker
                     label="Pickup Date"
                     value={pickupDate}
@@ -315,10 +322,18 @@ const CarDetails = () => {
                     renderInput={(params) => <TextField {...params} fullWidth />}
                     minDate={new Date()}
                   />
+                  <TextField
+                    label="Pickup Time"
+                    type="time"
+                    value={pickupTime}
+                    onChange={e => setPickupTime(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    inputProps={{ step: 300 }}
+                    sx={{ width: 140 }}
+                  />
                 </Box>
-
                 {bookingType === BOOKING_TYPES.DAILY && (
-                  <Box sx={{ mb: 3 }}>
+                  <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
                     <DatePicker
                       label="Return Date"
                       value={returnDate}
@@ -326,9 +341,17 @@ const CarDetails = () => {
                       renderInput={(params) => <TextField {...params} fullWidth />}
                       minDate={pickupDate || new Date()}
                     />
+                    <TextField
+                      label="Return Time"
+                      type="time"
+                      value={returnTime}
+                      onChange={e => setReturnTime(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                      inputProps={{ step: 300 }}
+                      sx={{ width: 140 }}
+                    />
                   </Box>
                 )}
-
                 {bookingType === BOOKING_TYPES.HOURLY && (
                   <FormControl fullWidth sx={{ mb: 3 }}>
                     <InputLabel>Duration</InputLabel>

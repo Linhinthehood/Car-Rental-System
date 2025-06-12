@@ -136,7 +136,7 @@ exports.getVehicleByUser = async (req, res) => {
 // Get available vehicles (status: 'Available') with filter & pagination
 exports.getAvailableVehicles = async (req, res) => {
   try {
-    const { brand, seats, carType, minPrice, maxPrice, modelYear, transmission, fuelType, page = 1, limit = 10, sort, features } = req.query;
+    const { brand, seats, carType, price, modelYear, transmission, fuelType, page = 1, limit = 10, sort, features } = req.query;
     const filter = { status: 'Available' };
     if (brand) filter.brand = brand;
     if (seats) filter.seats = Number(seats);
@@ -144,11 +144,28 @@ exports.getAvailableVehicles = async (req, res) => {
     if (modelYear) filter.modelYear = Number(modelYear);
     if (transmission) filter.transmission = transmission;
     if (fuelType) filter.fuelType = fuelType;
-    if (minPrice || maxPrice) {
+
+    // Xử lý price range filter
+    if (price) {
       filter.rentalPricePerDay = {};
-      if (minPrice) filter.rentalPricePerDay.$gte = Number(minPrice);
-      if (maxPrice) filter.rentalPricePerDay.$lte = Number(maxPrice);
+      switch (price) {
+        case 'lt1':
+          filter.rentalPricePerDay.$lt = 1000000;
+          break;
+        case '1-2':
+          filter.rentalPricePerDay.$gte = 1000000;
+          filter.rentalPricePerDay.$lte = 2000000;
+          break;
+        case '2-3':
+          filter.rentalPricePerDay.$gte = 2000000;
+          filter.rentalPricePerDay.$lte = 3000000;
+          break;
+        case 'gt3':
+          filter.rentalPricePerDay.$gt = 3000000;
+          break;
+      }
     }
+
     // Thêm filter cho features
     if (features) {
       if (Array.isArray(features)) {
@@ -157,14 +174,22 @@ exports.getAvailableVehicles = async (req, res) => {
         filter.features = { $all: [features] };
       }
     }
+
     const skip = (Number(page) - 1) * Number(limit);
+    
     // Xử lý sort
     let sortOption = {};
     if (sort === 'price_asc') sortOption = { rentalPricePerDay: 1 };
     else if (sort === 'price_desc') sortOption = { rentalPricePerDay: -1 };
     else sortOption = { createdAt: -1 };
-    const vehicles = await Vehicle.find(filter).skip(skip).limit(Number(limit)).sort(sortOption);
+
+    const vehicles = await Vehicle.find(filter)
+      .skip(skip)
+      .limit(Number(limit))
+      .sort(sortOption);
+
     const total = await Vehicle.countDocuments(filter);
+    
     res.json({
       data: vehicles,
       pagination: {
@@ -175,7 +200,11 @@ exports.getAvailableVehicles = async (req, res) => {
       }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in getAvailableVehicles:', err);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: err.message 
+    });
   }
 };
 
