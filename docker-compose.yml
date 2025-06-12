@@ -1,0 +1,93 @@
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - USER_SERVICE_URL=http://user-service:3001
+      - VEHICLE_SERVICE_URL=http://vehicle-service:3002
+      - BOOKING_SERVICE_URL=http://booking-service:3003
+      - LOG_LEVEL=info
+    depends_on:
+      - user-service
+      - vehicle-service
+      - booking-service
+    networks:
+      - car-rental-network
+
+
+  # User Service
+  user-service:
+    build:
+      context: ./backend/user-service
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./uploads/avatar:/usr/src/app/uploads/avatar
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRES_IN=24h
+    networks:
+      - car-rental-network
+
+  # Vehicle Service
+  vehicle-service:
+    build:
+      context: ./backend/vehicle-service
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./uploads/vehicles:/usr/src/app/uploads/vehicles
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - USER_SERVICE_URL=http://user-service:3001
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRES_IN=24h
+    networks:
+      - car-rental-network
+
+
+  # Booking Service
+  booking-service:
+    build:
+      context: ./backend/booking-service
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - USER_SERVICE_URL=http://user-service:3001
+      - VEHICLE_SERVICE_URL=http://vehicle-service:3002
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRES_IN=24h
+    networks:
+      - car-rental-network
+
+  # # Frontend
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "4000:4000"
+  #   environment:
+  #     - NODE_ENV=development
+  #     - REACT_APP_API_URL=http://localhost:3000
+  #   depends_on:
+  #     - api-gateway
+  #   networks:
+  #     - car-rental-network
+
+networks:
+  car-rental-network:
+    driver: bridge
