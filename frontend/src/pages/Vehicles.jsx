@@ -8,6 +8,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import api from '../utils/axios';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useNavigate } from 'react-router-dom';
 
 const PAGE_SIZE = 6;
 const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || '';
@@ -53,6 +54,7 @@ const Vehicles = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [filters, setFilters] = useState(defaultFilters);
   const [sort, setSort] = useState('default');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -96,6 +98,10 @@ const Vehicles = () => {
       };
     });
     setPage(1);
+  };
+
+  const handleCarClick = (carId) => {
+    navigate(`/vehicles/${carId}`);
   };
 
   return (
@@ -214,7 +220,26 @@ const Vehicles = () => {
                 <Grid container spacing={4} justifyContent="flex-start">
                   {cars.map((car) => (
                     <Grid item xs={12} sm={6} md={4} key={car._id}>
-                      <Card sx={{ boxShadow: 3, borderRadius: 3, border: '2px solid #e3e8ee', position: 'relative', height: 520, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', background: '#f7fafd' }}>
+                      <Card 
+                        sx={{ 
+                          boxShadow: 3, 
+                          borderRadius: 3, 
+                          border: '2px solid #e3e8ee', 
+                          position: 'relative', 
+                          height: 520, 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          justifyContent: 'flex-start', 
+                          background: '#f7fafd',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            transition: 'transform 0.2s ease-in-out',
+                            boxShadow: 6,
+                          }
+                        }}
+                        onClick={() => handleCarClick(car._id)}
+                      >
                         <Box sx={{ position: 'absolute', top: 20, right: 20, zIndex: 2 }}>
                           <Chip label={car.status} color={car.status === 'Available' ? 'success' : 'default'} size="small" />
                         </Box>

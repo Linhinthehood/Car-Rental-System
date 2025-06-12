@@ -6,6 +6,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    volumes:
+      - ./api-gateway:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
       - NODE_ENV=development
       - PORT=3000
@@ -29,6 +32,8 @@ services:
     ports:
       - "3001:3001"
     volumes:
+      - ./backend/user-service:/usr/src/app
+      - /usr/src/app/node_modules
       - ./uploads/avatar:/usr/src/app/uploads/avatar
     environment:
       - NODE_ENV=development
@@ -46,6 +51,8 @@ services:
     ports:
       - "3002:3002"
     volumes:
+      - ./backend/vehicle-service:/usr/src/app
+      - /usr/src/app/node_modules
       - ./uploads/vehicles:/usr/src/app/uploads/vehicles
     environment:
       - NODE_ENV=development
@@ -64,6 +71,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3003:3003"
+    volumes:
+      - ./backend/booking-service:/usr/src/app
+      - /usr/src/app/node_modules
     environment:
       - NODE_ENV=development
       - USER_SERVICE_URL=http://user-service:3001

@@ -5,7 +5,7 @@ const { BOOKING_TYPES, HOURLY_BOOKING_OPTIONS } = require('../constants/booking.
 const externalService = require('../services/external.service');
 
 // Calculate total price based on booking type and duration
-const calculateTotalPrice = (bookingType, hourlyDuration, rentalPricePerDay) => {
+const calculateTotalPrice = (bookingType, hourlyDuration, rentalPricePerDay, startDate, endDate) => {
   if (bookingType === BOOKING_TYPES.HOURLY) {
     const hourlyOption = Object.values(HOURLY_BOOKING_OPTIONS).find(
       option => option.duration === hourlyDuration
@@ -15,7 +15,16 @@ const calculateTotalPrice = (bookingType, hourlyDuration, rentalPricePerDay) => 
     }
     return rentalPricePerDay * hourlyOption.priceMultiplier;
   }
-  return rentalPricePerDay; // For daily bookings
+  
+  // For daily bookings
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    return rentalPricePerDay * days;
+  }
+  
+  return rentalPricePerDay; // Default case
 };
 
 // Create a new booking
@@ -49,7 +58,13 @@ const createBooking = async (req, res) => {
     }
 
     // Calculate total price
-    const totalPrice = calculateTotalPrice(bookingType, hourlyDuration, vehicle.rentalPricePerDay);
+    const totalPrice = calculateTotalPrice(
+      bookingType, 
+      hourlyDuration, 
+      vehicle.rentalPricePerDay,
+      startDate,
+      endDate
+    );
 
     const booking = new Booking({
       userId,
@@ -197,9 +212,47 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+// Calculate estimated price
+const calculateEstimatedPrice = async (req, res) => {
+  try {
+    const { vehicleId, bookingType, hourlyDuration, startDate, endDate } = req.body;
+    const token = req.headers.authorization;
+
+    // Verify vehicle exists
+    let vehicle;
+    try {
+      vehicle = await externalService.verifyVehicle(vehicleId, token);
+    } catch (error) {
+      return res.status(error.status).json({ message: error.message });
+    }
+
+    // Calculate total price
+    const totalPrice = calculateTotalPrice(
+      bookingType, 
+      hourlyDuration, 
+      vehicle.rentalPricePerDay,
+      startDate,
+      endDate
+    );
+
+    res.json({
+      totalPrice,
+      rentalPricePerDay: vehicle.rentalPricePerDay,
+      bookingType,
+      hourlyDuration: bookingType === BOOKING_TYPES.HOURLY ? hourlyDuration : null,
+      startDate,
+      endDate
+    });
+  } catch (error) {
+    logger.error('Error calculating estimated price:', error);
+    res.status(500).json({ message: 'Error calculating price' });
+  }
+};
+
 module.exports = {
   createBooking,
   getUserBookings,
   getBookingById,
-  updateBookingStatus
+  updateBookingStatus,
+  calculateEstimatedPrice
 }; 

@@ -12,6 +12,7 @@ router.use(authMiddleware);
 
 // Routes
 router.post('/', isCustomer, validateBooking, bookingController.createBooking);
+router.post('/calculate-price', bookingController.calculateEstimatedPrice);
 router.get('/user', isCustomer, paginationMiddleware, filterMiddleware, bookingController.getUserBookings);
 router.get('/:id', canViewBooking, bookingController.getBookingById);
 router.patch('/:id/status', canUpdateBookingStatus, bookingController.updateBookingStatus);

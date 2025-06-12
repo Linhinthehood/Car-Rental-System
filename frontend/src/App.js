@@ -1,27 +1,13 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Vehicles from './pages/Vehicles';
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-  typography: {
-    // fontFamily: 'Montserrat, Arial, sans-serif', // Đã dùng Montserrat
-    // fontFamily: 'Poppins, Arial, sans-serif', // Đã dùng Poppins
-    fontFamily: 'Lato, Arial, sans-serif', // Đang dùng Lato
-  },
-});
+import CarDetails from './pages/CarDetails';
 
 function App() {
   return (
@@ -33,6 +19,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<Home />} />
           <Route path="/vehicles" element={<Vehicles />} />
+          <Route path="/vehicles/:id" element={<CarDetails />} />
         </Routes>
       </Router>
     </ThemeProvider>
