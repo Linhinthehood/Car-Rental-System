@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const proxy = require('express-http-proxy');
 const winston = require('winston');
+const path = require('path');
 const config = require('./config/config');
 
 // Create Express app
@@ -32,6 +33,7 @@ if (config.env !== 'production') {
 app.use(helmet());
 app.use(cors());
 app.use(morgan('combined'));
+app.use(express.json());
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -64,9 +66,6 @@ app.use('/api/bookings', proxy(config.services.booking.url, {
     next(err);
   }
 }));
-
-// Đặt express.json() ở cuối, chỉ áp dụng cho các route còn lại (nếu cần)
-app.use(express.json());
 
 // Error handling middleware
 app.use((err, req, res, next) => {

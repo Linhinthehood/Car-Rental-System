@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Typography, Avatar } from '@mui/material';
+import { Box, Button, Typography, Avatar, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import api from '../utils/axios';
+import { toast } from 'react-hot-toast';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -8,12 +9,21 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    phoneNumber: ''
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await api.get('/api/users/me');
         setUser(res.data.data || res.data);
+        setEditForm({
+          name: res.data.data?.name || res.data.name,
+          phoneNumber: res.data.data?.phoneNumber || res.data.phoneNumber
+        });
       } catch (err) {
         setUser(null);
       } finally {
@@ -33,13 +43,24 @@ const Profile = () => {
       await api.patch('/api/users/me/avatar', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      // Sau khi upload thành công, reload lại user
       const res = await api.get('/api/users/me');
       setUser(res.data.data || res.data);
+      toast.success('Cập nhật avatar thành công!');
     } catch (err) {
-      // Có thể hiển thị thông báo lỗi ở đây
+      toast.error('Có lỗi xảy ra khi cập nhật avatar');
     } finally {
       setAvatarUploading(false);
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      const response = await api.patch('/api/users/me', editForm);
+      setUser(response.data.data || response.data);
+      setEditMode(false);
+      toast.success('Cập nhật thông tin thành công!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin');
     }
   };
 
@@ -47,13 +68,22 @@ const Profile = () => {
   if (!user) return <Typography align="center" sx={{ mt: 5 }}>Không tìm thấy thông tin người dùng.</Typography>;
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 5, p: 3, bgcolor: 'white', borderRadius: 2, boxShadow: 1 }}>
+    <Box sx={{ 
+      maxWidth: 1100,
+      minWidth: { md: 600 },
+      mx: 'auto', 
+      mt: 5, 
+      p: 3, 
+      bgcolor: 'white', 
+      borderRadius: 2, 
+      boxShadow: 1 
+    }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 700 }}>User Profile</Typography>
           <Typography variant="body2" color="text.secondary">Personal details and preferences.</Typography>
         </Box>
-        <Button variant="contained">Edit Profile</Button>
+        <Button variant="contained" onClick={() => setEditMode(true)}>Edit Profile</Button>
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2, mb: 2 }}>
         <label htmlFor="avatar-upload">
@@ -105,6 +135,31 @@ const Profile = () => {
           <Box>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}</Box>
         </Box>
       </Box>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editMode} onClose={() => setEditMode(false)}>
+        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+            <TextField
+              label="Full Name"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Phone Number"
+              value={editForm.phoneNumber}
+              onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+              fullWidth
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditMode(false)}>Cancel</Button>
+          <Button onClick={handleEditSubmit} variant="contained">Save</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
