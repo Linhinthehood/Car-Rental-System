@@ -202,6 +202,20 @@ const updateBookingStatus = async (req, res) => {
     req.booking.status = status;
     await req.booking.save();
 
+    // Reload booking từ database để lấy statusHistory mới nhất
+    const updatedBooking = await Booking.findById(req.booking._id);
+
+    // Emit socket event cho user
+    if (req.app.locals.io) {
+      req.app.locals.io.to(req.booking.userId.toString()).emit('bookingStatusUpdated', {
+        bookingId: updatedBooking._id,
+        status: updatedBooking.status,
+        statusHistory: updatedBooking.statusHistory,
+        paymentStatus: updatedBooking.paymentStatus,
+        paymentHistory: updatedBooking.paymentHistory,
+      });
+    }
+
     // Enrich booking with user and vehicle details
     try {
       const [userDetails, vehicleDetails] = await Promise.all([

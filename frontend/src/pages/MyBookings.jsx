@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Box, Typography, Grid, Card, CardMedia, CardContent, Chip, Button, Divider, Select, MenuItem, FormControl, InputLabel, Stack } from '@mui/material';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import api from '../utils/axios';
+import { io } from 'socket.io-client';
 
 const STATUS_OPTIONS = [
   { label: 'All Status', value: '' },
@@ -14,10 +15,13 @@ const STATUS_OPTIONS = [
 ];
 
 const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || '';
+const SOCKET_URL = process.env.REACT_APP_WS_BOOKINGS_URL;
+const SOCKET_PATH = process.env.REACT_APP_WS_BOOKINGS_PATH || '/ws/bookings';
 
 const MyBookings = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [bookings, setBookings] = useState([]);
+  const socketRef = useRef();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -30,6 +34,33 @@ const MyBookings = () => {
       }
     };
     fetchBookings();
+
+    // Kết nối socket qua API Gateway
+    socketRef.current = io(SOCKET_URL, { path: SOCKET_PATH, transports: ['websocket'] });
+    // Lấy userId từ localStorage (hoặc context/store)
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      socketRef.current.emit('join', userId);
+    }
+    // Lắng nghe sự kiện cập nhật trạng thái booking
+    socketRef.current.on('bookingStatusUpdated', (data) => {
+      setBookings(prev =>
+        prev.map(b =>
+          b._id === data.bookingId
+            ? {
+                ...b,
+                status: data.status,
+                statusHistory: data.statusHistory || b.statusHistory,
+                paymentStatus: data.paymentStatus,
+                paymentHistory: data.paymentHistory || b.paymentHistory,
+              }
+            : b
+        )
+      );
+    });
+    return () => {
+      socketRef.current.disconnect();
+    };
   }, []);
 
   const filteredBookings = statusFilter

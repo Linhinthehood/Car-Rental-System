@@ -6,6 +6,7 @@ const proxy = require('express-http-proxy');
 const winston = require('winston');
 const path = require('path');
 const config = require('./config/config');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Create Express app
 const app = express();
@@ -65,6 +66,14 @@ app.use('/api/bookings', proxy(config.services.booking.url, {
     console.error('Proxy Error:', err);
     next(err);
   }
+}));
+
+// Proxy WebSocket cho booking-service
+app.use('/ws/bookings', createProxyMiddleware({
+  target: process.env.BOOKING_SERVICE_WS_URL,
+  changeOrigin: true,
+  ws: true,
+  pathRewrite: { '^/ws/bookings': '/socket.io' },
 }));
 
 // Error handling middleware

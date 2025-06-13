@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config/config');
 const { connectDB, logger } = require('./config/database');
+const http = require('http');
+const socketio = require('socket.io');
 
 const app = express();
 
@@ -21,8 +23,19 @@ app.use((err, req, res, next) => {
 
 // Connect to MongoDB and start server
 connectDB().then(() => {
-  const PORT = config.port || 3003;
-  app.listen(PORT, () => {
+  const PORT = config.port;
+  const server = http.createServer(app);
+  const io = socketio(server, { cors: { origin: '*' } });
+  app.locals.io = io;
+
+  io.on('connection', (socket) => {
+    logger.info('User connected: ' + socket.id);
+    socket.on('join', (userId) => {
+      socket.join(userId);
+    });
+  });
+
+  server.listen(PORT, () => {
     logger.info(`Booking service is running on port ${PORT}`);
   });
 }); 
