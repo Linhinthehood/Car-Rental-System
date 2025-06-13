@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Vehicles from './pages/Vehicles';
 import CarDetails from './pages/CarDetails';
 import ProfilePage from './pages/ProfilePage';
+import MyBookings from './pages/MyBookings';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/vehicles" element={<Vehicles />} />
           <Route path="/vehicles/:id" element={<CarDetails />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/my-rentals" element={<MyBookings />} />
         </Routes>
       </Router>
     </ThemeProvider>

@@ -193,11 +193,11 @@ const Vehicles = () => {
           </Grid>
           {/* Danh sách xe */}
           <Grid item xs={12} md={9}>
-            <Typography variant="h5" fontWeight={700} align="left" gutterBottom>Danh sách xe</Typography>
+            <Typography variant="h5" fontWeight={700} align="left" gutterBottom>Vehicle List</Typography>
             {/* Thẻ tổng số xe và sắp xếp */}
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, p: 2, background: '#f7fafd', borderRadius: 2 }}>
               <Typography variant="body1" fontWeight={500}>
-                Tổng số xe: {totalCount}
+                Total Vehicles: {totalCount}
               </Typography>
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <InputLabel>Sort by</InputLabel>
