@@ -34,24 +34,22 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-const isCarProvider = (req, res, next) => {
-  if (req.user.role !== 'car_provider' && req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      error: 'Forbidden: car provider access required',
-      message: 'Only car providers can perform this action'
-    });
-  }
-  next();
-};
+const { logger } = require('../config/database');
 
 const isCustomer = (req, res, next) => {
-  if (!['customer', 'car_provider', 'admin'].includes(req.user.role)) {
-    return res.status(403).json({ 
-      error: 'Forbidden: customer access required',
-      message: 'Only customers can perform this action'
-    });
+  if (req.user && req.user.role === 'customer') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Only customers can access this resource.' });
   }
-  next();
+};
+
+const isCarProvider = (req, res, next) => {
+  if (req.user && req.user.role === 'car_provider') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Only car providers can access this resource.' });
+  }
 };
 
 module.exports = { authorizeRoles, isAdmin, isCarProvider, isCustomer }; 

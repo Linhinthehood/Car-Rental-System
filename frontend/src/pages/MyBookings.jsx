@@ -9,14 +9,27 @@ const STATUS_OPTIONS = [
   { label: 'All Status', value: '' },
   { label: 'Pending', value: 'pending' },
   { label: 'Approved', value: 'approved' },
-  { label: 'Rejected', value: 'rejected' },
+  { label: 'Started', value: 'started' },
   { label: 'Completed', value: 'completed' },
+  { label: 'Rejected', value: 'rejected' },
   { label: 'Cancelled', value: 'cancelled' },
 ];
 
 const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || '';
 const SOCKET_URL = process.env.REACT_APP_WS_BOOKINGS_URL;
 const SOCKET_PATH = process.env.REACT_APP_WS_BOOKINGS_PATH || '/ws/bookings';
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case 'pending': return 'warning';
+    case 'approved': return 'success';
+    case 'started': return 'info';
+    case 'completed': return 'primary';
+    case 'rejected': return 'error';
+    case 'cancelled': return 'default';
+    default: return 'default';
+  }
+};
 
 const MyBookings = () => {
   const [statusFilter, setStatusFilter] = useState('');
@@ -76,6 +89,24 @@ const MyBookings = () => {
     }
   };
 
+  const handleStartBooking = async (bookingId) => {
+    try {
+      await api.patch(`/api/bookings/${bookingId}/status`, { status: 'started' });
+      setBookings(prev => prev.map(b => b._id === bookingId ? { ...b, status: 'started' } : b));
+    } catch (err) {
+      alert('Failed to start booking!');
+    }
+  };
+
+  const handlePayment = async (bookingId) => {
+    try {
+      await api.patch(`/api/bookings/${bookingId}/payment`, { paymentStatus: 'paid' });
+      setBookings(prev => prev.map(b => b._id === bookingId ? { ...b, paymentStatus: 'paid' } : b));
+    } catch (err) {
+      alert('Thanh toán thất bại!');
+    }
+  };
+
   return (
     <Box minHeight="100vh" display="flex" flexDirection="column" sx={{ background: '#f6f7fb' }}>
       <Navbar />
@@ -116,7 +147,7 @@ const MyBookings = () => {
                   <CardContent sx={{ flex: 1, p: 0 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Typography variant="h6" fontWeight={700} sx={{ mb: 0, color: 'primary.main' }}>{vehicle.name || 'Car'}</Typography>
-                      <Chip label={booking.status} color={booking.status === 'pending' ? 'warning' : booking.status === 'approved' ? 'success' : booking.status === 'cancelled' ? 'default' : 'default'} sx={{ fontSize: 15, px: 2, py: 1, height: 32, borderRadius: 8 }} />
+                      <Chip label={booking.status} color={getStatusColor(booking.status)} sx={{ fontSize: 15, px: 2, py: 1, height: 32, borderRadius: 8 }} />
                     </Box>
                     <Divider sx={{ mb: 2 }} />
                     <Box sx={{ display: 'flex', gap: 8, mb: 2, alignItems: 'flex-start' }}>
@@ -144,15 +175,7 @@ const MyBookings = () => {
                             <Chip size="small"
                               label={s.status}
                               sx={{ mr: 1 }}
-                              color={
-                                s.status === 'pending' ? 'warning' :
-                                s.status === 'approved' ? 'success' :
-                                s.status === 'cancelled' ? 'default' :
-                                s.status === 'rejected' ? 'error' :
-                                s.status === 'started' ? 'info' :
-                                s.status === 'completed' ? 'success' :
-                                'default'
-                              }
+                              color={getStatusColor(s.status)}
                             />
                             <Typography variant="body2" component="span">
                               {s.changedAt ? new Date(s.changedAt).toLocaleString('vi-VN') : '--'}
@@ -177,9 +200,19 @@ const MyBookings = () => {
                         Total Price: <span style={{ color: '#1976d2' }}>{booking.totalPrice?.toLocaleString('vi-VN') || '--'} ₫</span>
                         <Chip label={booking.paymentStatus} color={booking.paymentStatus === 'unpaid' ? 'error' : 'success'} size="medium" sx={{ ml: 2, fontSize: 15, px: 2, py: 1, height: 28, borderRadius: 8 }} />
                       </Typography>
-                      {booking.paymentStatus === 'unpaid' && booking.status === 'pending' && (
+                      {booking.status === 'pending' && booking.paymentStatus === 'unpaid' && (
                         <Button variant="contained" color="error" onClick={() => handleCancelBooking(booking._id)} sx={{ fontSize: 15, px: 3, py: 1, borderRadius: 8 }}>
                           Cancel Booking
+                        </Button>
+                      )}
+                      {booking.status === 'approved' && booking.paymentStatus === 'unpaid' && (
+                        <Button variant="contained" color="success" onClick={() => handlePayment(booking._id)} sx={{ fontSize: 15, px: 3, py: 1, borderRadius: 8 }}>
+                          Pay
+                        </Button>
+                      )}
+                      {booking.status === 'approved' && booking.paymentStatus === 'paid' && (
+                        <Button variant="contained" color="primary" onClick={() => handleStartBooking(booking._id)} sx={{ fontSize: 15, px: 3, py: 1, borderRadius: 8 }}>
+                          Start Booking
                         </Button>
                       )}
                     </Box>

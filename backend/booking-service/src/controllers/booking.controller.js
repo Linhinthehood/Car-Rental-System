@@ -241,6 +241,63 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+// Update payment status
+const updatePaymentStatus = async (req, res) => {
+  try {
+    const token = req.headers.authorization;
+    const { paymentStatus, paymentId } = req.body;
+
+    // Validate payment status
+    if (!['unpaid', 'paid'].includes(paymentStatus)) {
+      return res.status(400).json({ message: 'Invalid payment status' });
+    }
+
+    // Update booking payment status
+    req.booking.paymentStatus = paymentStatus;
+    if (paymentId) {
+      req.booking.paymentId = paymentId;
+    }
+    await req.booking.save();
+
+    // Reload booking từ database để lấy paymentHistory mới nhất
+    const updatedBooking = await Booking.findById(req.booking._id);
+
+    // Emit socket event cho user
+    if (req.app.locals.io) {
+      req.app.locals.io.to(req.booking.userId.toString()).emit('bookingStatusUpdated', {
+        bookingId: updatedBooking._id,
+        status: updatedBooking.status,
+        statusHistory: updatedBooking.statusHistory,
+        paymentStatus: updatedBooking.paymentStatus,
+        paymentHistory: updatedBooking.paymentHistory,
+      });
+    }
+
+    // Enrich booking with user and vehicle details
+    try {
+      const [userDetails, vehicleDetails] = await Promise.all([
+        externalService.getUserDetails(req.booking.userId, token),
+        externalService.getVehicleDetails(req.booking.vehicleId, token)
+      ]);
+
+      const enrichedBooking = {
+        ...req.booking.toObject(),
+        user: userDetails,
+        vehicle: vehicleDetails
+      };
+
+      res.json(enrichedBooking);
+    } catch (error) {
+      logger.error(`[updatePaymentStatus] Error enriching booking ${req.booking._id}: ${error.message}`);
+      // If enrichment fails, return basic booking data
+      res.json(req.booking);
+    }
+  } catch (error) {
+    logger.error('Error updating payment status:', error);
+    res.status(500).json({ message: 'Error updating payment status' });
+  }
+};
+
 // Calculate estimated price
 const calculateEstimatedPrice = async (req, res) => {
   try {
@@ -281,10 +338,73 @@ const calculateEstimatedPrice = async (req, res) => {
   }
 };
 
+// Get all bookings for the car provider
+const getProviderBookings = async (req, res) => {
+  try {
+    const car_providerId = req.user.id; // Lấy ID của car provider từ token
+    const token = req.headers.authorization;
+    const { page, limit, skip } = req.pagination;
+    const filter = req.filter;
+
+    // Add car provider filter
+    const queryFilter = {
+      car_providerId,
+      ...filter
+    };
+
+    // Get total count of bookings with filter
+    const totalBookings = await Booking.countDocuments(queryFilter);
+    const totalPages = Math.ceil(totalBookings / limit);
+
+    // Get paginated bookings with filter
+    const bookings = await Booking.find(queryFilter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // Sort by newest first
+    
+    // Enrich bookings with user and vehicle details
+    const enrichedBookings = await Promise.all(bookings.map(async (booking) => {
+      try {
+        const [userDetails, vehicleDetails] = await Promise.all([
+          externalService.getUserDetails(booking.userId, token),
+          externalService.getVehicleDetails(booking.vehicleId, token)
+        ]);
+
+        return {
+          ...booking.toObject(),
+          customer: userDetails, // Đổi tên user thành customer cho dễ hiểu
+          car: vehicleDetails // Đổi tên vehicle thành car cho dễ hiểu
+        };
+      } catch (error) {
+        logger.error(`[getProviderBookings] Error enriching booking ${booking._id}: ${error.message}`);
+        return booking.toObject();
+      }
+    }));
+
+    res.json({
+      data: enrichedBookings,
+      pagination: {
+        page,
+        limit,
+        totalPages,
+        totalBookings,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      },
+      filters: filter
+    });
+  } catch (error) {
+    logger.error('Error fetching provider bookings:', error);
+    res.status(500).json({ message: 'Error fetching bookings' });
+  }
+};
+
 module.exports = {
   createBooking,
   getUserBookings,
   getBookingById,
   updateBookingStatus,
-  calculateEstimatedPrice
+  updatePaymentStatus,
+  calculateEstimatedPrice,
+  getProviderBookings
 }; 

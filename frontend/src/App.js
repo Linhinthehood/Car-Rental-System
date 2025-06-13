@@ -10,6 +10,7 @@ import Vehicles from './pages/Vehicles';
 import CarDetails from './pages/CarDetails';
 import ProfilePage from './pages/ProfilePage';
 import MyBookings from './pages/MyBookings';
+import ManagerCars from './pages/ManagerCars';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/vehicles/:id" element={<CarDetails />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/my-rentals" element={<MyBookings />} />
+          <Route path="/manager-cars" element={<ManagerCars />} />
         </Routes>
       </Router>
     </ThemeProvider>
