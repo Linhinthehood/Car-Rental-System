@@ -64,27 +64,26 @@ const BookingManagement = () => {
 
     // Kết nối socket qua API Gateway
     socketRef.current = io(SOCKET_URL, { path: SOCKET_PATH, transports: ['websocket'] });
-    // Lấy userId từ localStorage (hoặc context/store)
+    // Lấy userId từ localStorage
     const userId = localStorage.getItem('userId');
     if (userId) {
       socketRef.current.emit('join', userId);
     }
+
+    // Lắng nghe sự kiện booking mới
+    socketRef.current.on('newBooking', (data) => {
+      setBookings(prev => [data, ...prev]);
+    });
+
     // Lắng nghe sự kiện cập nhật trạng thái booking
     socketRef.current.on('bookingStatusUpdated', (data) => {
       setBookings(prev =>
         prev.map(b =>
-          b._id === data.bookingId
-            ? {
-                ...b,
-                status: data.status,
-                statusHistory: data.statusHistory || b.statusHistory,
-                paymentStatus: data.paymentStatus,
-                paymentHistory: data.paymentHistory || b.paymentHistory,
-              }
-            : b
+          b._id === data._id ? data : b
         )
       );
     });
+
     return () => {
       socketRef.current.disconnect();
     };

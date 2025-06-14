@@ -94,6 +94,26 @@ const createBooking = async (req, res) => {
 
     await booking.save();
     logger.info(`New booking created: ${booking._id}`);
+
+    // Enrich booking
+    let enrichedBooking = booking.toObject();
+    try {
+      const [userDetails, vehicleDetails] = await Promise.all([
+        externalService.getUserDetails(userId, token),
+        externalService.getVehicleDetails(vehicleId, token)
+      ]);
+      enrichedBooking.user = userDetails;
+      enrichedBooking.vehicle = vehicleDetails;
+    } catch (e) {
+      logger.error('Error enriching booking for socket emit:', e);
+    }
+
+    // Emit socket event for new booking
+    if (req.app.locals.io) {
+      req.app.locals.io.to(userId.toString()).emit('newBooking', enrichedBooking);
+      req.app.locals.io.to(vehicle.car_providerId.toString()).emit('newBooking', enrichedBooking);
+    }
+
     res.status(201).json(booking);
   } catch (error) {
     logger.error('Error creating booking:', error);
@@ -205,31 +225,39 @@ const updateBookingStatus = async (req, res) => {
     // Reload booking từ database để lấy statusHistory mới nhất
     const updatedBooking = await Booking.findById(req.booking._id);
 
-    // Emit socket event cho user
-    if (req.app.locals.io) {
-      req.app.locals.io.to(req.booking.userId.toString()).emit('bookingStatusUpdated', {
-        bookingId: updatedBooking._id,
-        status: updatedBooking.status,
-        statusHistory: updatedBooking.statusHistory,
-        paymentStatus: updatedBooking.paymentStatus,
-        paymentHistory: updatedBooking.paymentHistory,
-      });
+    // Enrich booking
+    let enrichedBooking = updatedBooking.toObject();
+    try {
+      const [userDetails, vehicleDetails] = await Promise.all([
+        externalService.getUserDetails(updatedBooking.userId, token),
+        externalService.getVehicleDetails(updatedBooking.vehicleId, token)
+      ]);
+      enrichedBooking.user = userDetails;
+      enrichedBooking.vehicle = vehicleDetails;
+    } catch (e) {
+      logger.error('Error enriching booking for socket emit:', e);
     }
 
-    // Enrich booking with user and vehicle details
+    // Emit socket event cho user và car provider
+    if (req.app.locals.io) {
+      req.app.locals.io.to(updatedBooking.userId.toString()).emit('bookingStatusUpdated', enrichedBooking);
+      req.app.locals.io.to(updatedBooking.car_providerId.toString()).emit('bookingStatusUpdated', enrichedBooking);
+    }
+
+    // Enrich booking with user and vehicle details (for API response)
     try {
       const [userDetails, vehicleDetails] = await Promise.all([
         externalService.getUserDetails(req.booking.userId, token),
         externalService.getVehicleDetails(req.booking.vehicleId, token)
       ]);
 
-      const enrichedBooking = {
+      const enrichedBookingForRes = {
         ...req.booking.toObject(),
         user: userDetails,
         vehicle: vehicleDetails
       };
 
-      res.json(enrichedBooking);
+      res.json(enrichedBookingForRes);
     } catch (error) {
       logger.error(`[updateBookingStatus] Error enriching booking ${req.booking._id}: ${error.message}`);
       // If enrichment fails, return basic booking data
@@ -262,31 +290,39 @@ const updatePaymentStatus = async (req, res) => {
     // Reload booking từ database để lấy paymentHistory mới nhất
     const updatedBooking = await Booking.findById(req.booking._id);
 
-    // Emit socket event cho user
-    if (req.app.locals.io) {
-      req.app.locals.io.to(req.booking.userId.toString()).emit('bookingStatusUpdated', {
-        bookingId: updatedBooking._id,
-        status: updatedBooking.status,
-        statusHistory: updatedBooking.statusHistory,
-        paymentStatus: updatedBooking.paymentStatus,
-        paymentHistory: updatedBooking.paymentHistory,
-      });
+    // Enrich booking
+    let enrichedBooking = updatedBooking.toObject();
+    try {
+      const [userDetails, vehicleDetails] = await Promise.all([
+        externalService.getUserDetails(updatedBooking.userId, token),
+        externalService.getVehicleDetails(updatedBooking.vehicleId, token)
+      ]);
+      enrichedBooking.user = userDetails;
+      enrichedBooking.vehicle = vehicleDetails;
+    } catch (e) {
+      logger.error('Error enriching booking for socket emit:', e);
     }
 
-    // Enrich booking with user and vehicle details
+    // Emit socket event cho user và car provider
+    if (req.app.locals.io) {
+      req.app.locals.io.to(updatedBooking.userId.toString()).emit('bookingStatusUpdated', enrichedBooking);
+      req.app.locals.io.to(updatedBooking.car_providerId.toString()).emit('bookingStatusUpdated', enrichedBooking);
+    }
+
+    // Enrich booking with user and vehicle details (for API response)
     try {
       const [userDetails, vehicleDetails] = await Promise.all([
         externalService.getUserDetails(req.booking.userId, token),
         externalService.getVehicleDetails(req.booking.vehicleId, token)
       ]);
 
-      const enrichedBooking = {
+      const enrichedBookingForRes = {
         ...req.booking.toObject(),
         user: userDetails,
         vehicle: vehicleDetails
       };
 
-      res.json(enrichedBooking);
+      res.json(enrichedBookingForRes);
     } catch (error) {
       logger.error(`[updatePaymentStatus] Error enriching booking ${req.booking._id}: ${error.message}`);
       // If enrichment fails, return basic booking data

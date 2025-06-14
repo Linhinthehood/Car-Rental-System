@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -31,6 +31,8 @@ import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import api from '../utils/axios';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { io } from 'socket.io-client';
+import { useSnackbar } from 'notistack';
 
 // Fix for default marker icon in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -60,6 +62,9 @@ const HOURLY_OPTIONS = [
   { value: 12, label: '12 hours' },
 ];
 
+const SOCKET_URL = process.env.REACT_APP_WS_BOOKINGS_URL;
+const SOCKET_PATH = process.env.REACT_APP_WS_BOOKINGS_PATH || '/ws/bookings';
+
 const CarDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -72,6 +77,8 @@ const CarDetails = () => {
   const [estimatedPrice, setEstimatedPrice] = useState(null);
   const [pickupTime, setPickupTime] = useState('09:00');
   const [returnTime, setReturnTime] = useState('09:00');
+  const socketRef = useRef();
+  const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
     const fetchCarDetails = async () => {
@@ -92,6 +99,32 @@ const CarDetails = () => {
 
     fetchCarDetails();
   }, [id, navigate]);
+
+  useEffect(() => {
+    // Kết nối socket
+    socketRef.current = io(SOCKET_URL, { path: SOCKET_PATH, transports: ['websocket'] });
+    
+    // Lấy userId từ localStorage
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+      socketRef.current.emit('join', userId);
+    }
+
+    // Lắng nghe sự kiện booking mới
+    socketRef.current.on('newBooking', (data) => {
+      enqueueSnackbar('Đặt xe thành công!', { 
+        variant: 'success',
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'right',
+        },
+      });
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+  }, [enqueueSnackbar]);
 
   const handleBookingTypeChange = (event) => {
     setBookingType(event.target.value);
@@ -198,6 +231,13 @@ const CarDetails = () => {
       await api.post('/api/bookings', bookingData);
       navigate('/my-rentals');
     } catch (error) {
+      enqueueSnackbar('Đặt xe thất bại! Vui lòng thử lại.', { 
+        variant: 'error',
+        anchorOrigin: {
+          vertical: 'top',
+          horizontal: 'right',
+        },
+      });
       console.error('Error creating booking:', error);
     }
   };

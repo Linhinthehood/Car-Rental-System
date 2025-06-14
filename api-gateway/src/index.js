@@ -70,7 +70,13 @@ app.use('/api/bookings', proxy(config.services.booking.url, {
 
 // Proxy WebSocket cho booking-service
 app.use('/ws/bookings', createProxyMiddleware({
-  target: process.env.BOOKING_SERVICE_WS_URL,
+  target: proxy(config.services.booking.url, {
+    proxyReqPathResolver: (req) => req.originalUrl,
+    proxyErrorHandler: (err, res, next) => {
+      console.error('Proxy Error:', err);
+      next(err);
+    }
+  }),
   changeOrigin: true,
   ws: true,
   pathRewrite: { '^/ws/bookings': '/socket.io' },
