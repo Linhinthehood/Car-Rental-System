@@ -41,7 +41,9 @@ const vehicleRoutes = require('./routes/vehicle.routes');
 app.use('/api/vehicles', vehicleRoutes);
 
 // Static file serving
-app.use('/uploads/vehicles', express.static('/usr/src/app/uploads/vehicles'));
+const uploadDir = process.env.UPLOAD_VEHICLE_PATH || '/usr/src/app/uploads/vehicles';
+const uploadPublicUrl = process.env.UPLOAD_VEHICLE_URL || '/uploads/vehicles';
+app.use(uploadPublicUrl, require('express').static(uploadDir));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

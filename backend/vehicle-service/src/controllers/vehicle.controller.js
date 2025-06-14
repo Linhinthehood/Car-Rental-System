@@ -271,11 +271,62 @@ exports.getAvailableVehicles = async (req, res) => {
   }
 };
 
-// Upload vehicle image
-exports.uploadVehicleImage = (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
+// Upload vehicle image và cập nhật vào vehicle.images
+exports.uploadVehicleImage = async (req, res) => {
+  try {
+    const vehicleId = req.body.vehicleId || req.params.id;
+    if (!vehicleId) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Vehicle ID is required' 
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'No file uploaded or invalid file type' 
+      });
+    }
+
+    const uploadPublicUrl = process.env.UPLOAD_VEHICLE_URL || '/uploads/vehicles/';
+    const imagePath = uploadPublicUrl + req.file.filename;
+
+    // Cập nhật vào mảng images của vehicle
+    const vehicle = await Vehicle.findById(vehicleId);
+    if (!vehicle) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'Vehicle not found' 
+      });
+    }
+
+    // Kiểm tra quyền sở hữu
+    if (req.user.role !== 'admin' && vehicle.car_providerId.toString() !== req.user._id) {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Forbidden: only owner or admin can upload images for this vehicle' 
+      });
+    }
+
+    vehicle.images = vehicle.images || [];
+    vehicle.images.push(imagePath);
+    await vehicle.save();
+
+    res.status(200).json({ 
+      success: true,
+      message: 'Image uploaded successfully',
+      data: {
+        imagePath,
+        images: vehicle.images
+      }
+    });
+  } catch (err) {
+    console.error('Error in uploadVehicleImage:', err);
+    res.status(500).json({ 
+      success: false,
+      error: 'Internal server error',
+      message: err.message 
+    });
   }
-  const imagePath = '/uploads/vehicles/' + req.file.filename;
-  res.status(200).json({ message: 'Image uploaded', imagePath });
 }; 

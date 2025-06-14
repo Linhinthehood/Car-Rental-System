@@ -16,6 +16,8 @@ services:
       - VEHICLE_SERVICE_URL=http://vehicle-service:3002
       - BOOKING_SERVICE_URL=http://booking-service:3003
       - LOG_LEVEL=info
+      - UPLOAD_VEHICLE_PATH=/usr/src/app/uploads/vehicles
+      - UPLOAD_VEHICLE_URL=/uploads/vehicles/
     depends_on:
       - user-service
       - vehicle-service
@@ -60,6 +62,8 @@ services:
       - USER_SERVICE_URL=http://user-service:3001
       - JWT_SECRET=your_jwt_secret_key
       - JWT_EXPIRES_IN=24h
+      - UPLOAD_VEHICLE_PATH=/usr/src/app/uploads/vehicles
+      - UPLOAD_VEHICLE_URL=/uploads/vehicles/
     networks:
       - car-rental-network
 

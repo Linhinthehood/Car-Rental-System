@@ -41,6 +41,16 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
+// Proxy raw stream for file upload (no body parser!)
+app.use('/api/vehicles/upload-image', (req, res, next) => {
+  console.log('Proxy upload-image:', req.method, req.originalUrl);
+  next();
+}, createProxyMiddleware({
+  target: config.services.vehicle.url,
+  changeOrigin: true,
+  selfHandleResponse: false
+}));
+
 // User Service Routes
 app.use('/api/users', proxy(config.services.user.url, {
   proxyReqPathResolver: (req) => req.originalUrl,
@@ -50,7 +60,7 @@ app.use('/api/users', proxy(config.services.user.url, {
   }
 }));
 
-// Vehicle Service Routes
+// Vehicle Service Routes (except upload-image)
 app.use('/api/vehicles', proxy(config.services.vehicle.url, {
   proxyReqPathResolver: (req) => req.originalUrl,
   proxyErrorHandler: (err, res, next) => {
