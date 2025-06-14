@@ -62,8 +62,8 @@ const HOURLY_OPTIONS = [
   { value: 12, label: '12 hours' },
 ];
 
-const SOCKET_URL = process.env.REACT_APP_WS_BOOKINGS_URL;
-const SOCKET_PATH = process.env.REACT_APP_WS_BOOKINGS_PATH || '/ws/bookings';
+const SOCKET_URL = `${process.env.REACT_APP_API_URL}/ws/booking`;
+const SOCKET_PATH = '/ws/bookings';
 
 const CarDetails = () => {
   const { id } = useParams();

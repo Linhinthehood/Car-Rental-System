@@ -29,8 +29,8 @@ const STATUS_OPTIONS = [
 ];
 
 const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || '';
-const SOCKET_URL = process.env.REACT_APP_WS_BOOKINGS_URL;
-const SOCKET_PATH = process.env.REACT_APP_WS_BOOKINGS_PATH || '/ws/bookings';
+const SOCKET_URL = `${process.env.REACT_APP_API_URL}/ws/booking`;
+const SOCKET_PATH = '/ws/bookings';
 
 const getStatusColor = (status) => {
   switch (status) {
