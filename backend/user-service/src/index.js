@@ -42,7 +42,7 @@ connectDB();
 
 // Routes
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', service: 'user-service' });
+  res.status(200).json({ status: 'ok' });
 });
 
 app.use('/api/users', userRoutes);

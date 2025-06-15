@@ -19,5 +19,15 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "jest": "^29.7.0"
-  }
+  },
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Linhinthehood/Car-Rental-System.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Linhinthehood/Car-Rental-System/issues"
+  },
+  "homepage": "https://github.com/Linhinthehood/Car-Rental-System#readme"
 }
